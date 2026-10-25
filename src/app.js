@@ -1,6 +1,6 @@
 /* ===== Garagem: escolhe o carro, guarda a escolha e troca com transição ===== */
 (function () {
-  const CARS = window.CARS || [];
+  const CARS = (window.CARS || []).slice().sort((a, b) => (a.order || 99) - (b.order || 99));
   const root = document.getElementById('root');
   if (!window.THREE || !THREE.OrbitControls || !THREE.RoomEnvironment || !CARS.length) {
     root.innerHTML = '<p class="fail">Não consegui carregar o motor 3D. Verifique a conexão e recarregue a página.</p>';

@@ -51,6 +51,7 @@ header { grid-area: top; display: flex; align-items: center; gap: 18px; padding:
 .brand .txt { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .brand strong { font-size: 14px; font-weight: 650; white-space: nowrap; }
 .brand .txt > span { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand .short { display: none; }
 .brand .swap { flex: none; width: 22px; height: 22px; border-radius: 6px; background: var(--panel-2); position: relative; }
 .brand .swap::before, .brand .swap::after { content: ''; position: absolute; left: 7px; width: 6px; height: 6px; border-right: 1.5px solid var(--ink-2); border-bottom: 1.5px solid var(--ink-2); }
 .brand .swap::before { top: 5px; transform: rotate(-135deg); }
@@ -268,7 +269,9 @@ button.mi:focus-visible { background: var(--panel-2); }
   #app.dragging { transition: none; user-select: none; }
   header { padding: 8px 12px; gap: 10px; }
   .brand .num { font-size: 24px; }
-  .brand .txt { display: none; }
+  .brand { gap: 7px; padding-right: 6px; }
+  .brand .txt > span, .brand .full { display: none; }
+  .brand .short { display: inline; }
   .search { width: auto; flex: 1; order: 2; }
   .hbtn { order: 3; margin-left: 0; padding: 0 10px; }
   #panel { grid-area: panel; display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-top: 1px solid var(--rule); box-shadow: 0 -8px 24px rgba(0, 0, 0, .08); border-radius: 14px 14px 0 0; }

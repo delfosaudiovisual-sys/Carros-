@@ -7,7 +7,7 @@ function appHTML(CAR, opts) {
   <header>
     <button id="carBtn" class="brand" type="button" ${many ? 'aria-haspopup="dialog" aria-expanded="false"' : 'disabled'} aria-label="${e(CAR.title)}${many ? '. Trocar de carro' : ''}">
       <span class="num" aria-hidden="true">${e(CAR.badge)}</span>
-      <span class="txt"><strong>${e(CAR.title)}</strong><span>${e(CAR.sub)}</span></span>
+      <span class="txt"><strong><span class="full">${e(CAR.title)}</span><span class="short">${e(CAR.short || CAR.name)}</span></strong><span>${e(CAR.sub)}</span></span>
       ${many ? '<span class="swap" aria-hidden="true"></span>' : ''}
     </button>
     <button id="fichaBtn" class="hbtn" type="button">Ficha técnica</button>
@@ -990,7 +990,7 @@ function initScene(canvas) {
   carRoot = new THREE.Group(); scene.add(carRoot);  // montado com +z = lado do motorista; espelhado abaixo para ficar mão esquerda
   const K = { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
     gBox, gCyl, gLathe, gTorus, gTube, curveOf, setBar, mono, makeBody, art, ANIM, WHEELS, ROUTES, REG, lerp3 };
-  GEO = CAR.geometry(K);
+  GEO = (CAR.geometry || (window.CAR_GEO || {})[CAR.id])(K);
   GEO.build(); buildFasteners();
   for (const id in REG) REG[id].meshes.forEach(m => { if (!m.isInstancedMesh) m.castShadow = m.castShadow || id === 'pneus' || (PARTS[id] && PARTS[id].s === 'carro' && m.userData.baseMat === MAT.paint); });
   refreshThemeColors();
@@ -1586,10 +1586,10 @@ return (function () {
   function codesHTML(id) {
     const pr = PROC[id] || {}, oemL = CAR.oemLabel || 'Código original';
     let h = '<div class="codes">' + copyBtn('Ref. no app', CODE[id]);
-    if (pr.oem) [].concat(pr.oem).forEach(c => { h += copyBtn(oemL, c, 'oem'); });
+    if (pr.oem) [].concat(pr.oem).forEach(c => { h += Array.isArray(c) ? copyBtn(c[0], c[1], 'oem') : copyBtn(oemL, c, 'oem'); });
     h += '</div>';
     if (pr.alt) h += `<p class="alt">Equivalentes: ${esc([].concat(pr.alt).join(', '))}</p>`;
-    else if (!pr.oem && PARTS[id]) h += `<p class="alt">${esc(CAR.oemHint || 'Código original: confirme pelo número do chassi no balcão de peças.')}</p>`;
+    if (!pr.oem && PARTS[id]) h += `<p class="alt">${esc(CAR.oemHint || 'Código original: confirme pelo número do chassi no balcão de peças.')}</p>`;
     return h;
   }
   function stepsHTML(list) { return `<ol class="proc">${list.map(t => `<li>${esc(t)}</li>`).join('')}</ol>`; }
@@ -1921,7 +1921,7 @@ return (function () {
 
   /* ---------- busca ---------- */
   const q = $('#q'), qres = $('#qres');
-  const codeKey = id => { const c = [CODE[id], ...[].concat((PROC[id] || {}).oem || []), ...[].concat((PROC[id] || {}).alt || [])].join(' '); return ' ' + c + ' ' + c.replace(/[-.\s]/g, ''); };
+  const codeKey = id => { const c = [CODE[id], ...[].concat((PROC[id] || {}).oem || []).map(o => Array.isArray(o) ? o[1] : o), ...[].concat((PROC[id] || {}).alt || [])].join(' '); return ' ' + c + ' ' + c.replace(/[-.\s]/g, ''); };
   const INDEX = [...Object.values(PARTS).map(p => ({ id: p.id, n: p.n, s: p.s, k: norm(p.n + ' ' + p.w + codeKey(p.id)) })), ...Object.values(FIX).map(f => ({ id: f.id, n: f.n, s: PARTS[f.p].s, k: norm(f.n + ' ' + f.spec + ' parafuso porca' + codeKey(f.id)) }))];
   q.addEventListener('input', () => {
     const t = norm(q.value.trim()); if (!t) { qres.hidden = true; return; }
@@ -2117,7 +2117,7 @@ return (function () {
     /* motor, ventoinha, rodas e direção */
     const eng = APP.run ? 1 : (reduceMotion ? 0 : APP.motion.engine);
     if (eng > 0) { APP.theta = (APP.theta || 0) + dt * TAU * 0.8 * eng; updateEngine(APP.theta); }
-    const fan = Math.max(eng, reduceMotion ? 0 : APP.motion.fan * 1.6); if (ANIM.fan && fan > 0) ANIM.fan.rotation.x += dt * 8 * fan;
+    const fan = Math.max(eng, reduceMotion ? 0 : APP.motion.fan * 1.6); if (fan > 0) (ANIM.fans || (ANIM.fan ? [ANIM.fan] : [])).forEach(f => { f.rotation.x += dt * 8 * fan; });
     const wt = reduceMotion ? 0 : APP.motion.wheels;
     APP.wheelSpeed += (wt - APP.wheelSpeed) * Math.min(1, dt * (wt > APP.wheelSpeed ? 1.6 : 2.2));
     if (APP.wheelSpeed > 0.002) { APP.wheelAng += dt * TAU * 0.9 * APP.wheelSpeed; updateWheels(); }

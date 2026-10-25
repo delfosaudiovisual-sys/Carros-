@@ -1,8 +1,10 @@
 /* ===== Peugeot 206 Sensation 1.4 flex 2007 (2 portas, sem ar, sem airbag, direção mecânica) ===== */
 (window.CARS = window.CARS || []).push({
-  id: 'peugeot-206', storeKey: 'p206', codePrefix: '206',
-  badge: '1.4', name: 'Peugeot 206', title: 'Peugeot 206 Sensation', sub: '1.4 flex 2007, 2 portas, sem ar, sem airbag, direção mecânica',
+  id: 'peugeot-206', order: 1, storeKey: 'p206', codePrefix: '206',
+  badge: '1.4', name: 'Peugeot 206', short: '206', title: 'Peugeot 206 Sensation', sub: '1.4 flex 2007, 2 portas, sem ar, sem airbag, direção mecânica',
   kmDefault: 180355, size: [3.835, 1.652], wheelR: 0.2915,
+  profile: { top: [[-1.87, .55], [-1.80, .615], [-1.66, .86], [-1.35, 1.23], [-1.10, 1.39], [-0.6, 1.43], [-0.2, 1.43], [0.23, 1.40], [0.5, 1.21], [0.82, 1.00], [1.2, .93], [1.5, .87], [1.80, .79], [1.90, .71], [1.945, .61]],
+    rearLow: 0.30, frontLow: 0.26, floor: 0.19, wheels: [1.2215, -1.2215], arch: 0.375, wheelR: 0.2915, wheelY: 0.29 },
   oemLabel: 'Código PSA', oemHint: 'Código original PSA: confirme pelo número do chassi (VIN) no balcão de peças.',
   open: { hood: 'capo', tail: 'tampa_tras', door: 'portas' },
   xrayExtra: ['farois', 'lanternas', 'piscas_lat', 'luz_freio', 'luz_placa', 'neblina_tras', 'bocal'],
