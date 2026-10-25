@@ -24,6 +24,7 @@
     busy = true; closeGarage(false);
     try { await cur.leave(); } catch (e) { }
     cur.destroy(); mount(id, true);
+    const b = document.getElementById('carBtn'); if (b) b.focus({ preventScroll: true });   // o foco volta ao nome do carro, não se perde no body
     busy = false;
   }
 

@@ -1621,7 +1621,7 @@ return (function () {
     if (app.classList.contains('detail-open') !== !!id) { app.classList.toggle('detail-open', !!id); resize(); }
     if (!id) { detail.innerHTML = ''; return; }
     const inf = infoOf(id), sys = SYS[inf.sys];
-    if (ctx && ctx.fl.kind === 'dm') dtab = 'oficina';
+    if (ctx) dtab = ctx.fl.kind === 'dm' ? 'oficina' : 'sobre';      // guia de desmontagem abre na oficina; caminhos, no que a peça faz
     let h = '';
     if (ctx) h += `<div class="flowctx" style="--c:${ctx.fl.c}"><span>Passo ${ctx.i + 1} de ${ctx.fl.steps.length} · ${esc(ctx.fl.kind === 'dm' ? 'Como desmontar: ' + ctx.fl.n : ctx.fl.n)}</span><strong>${esc(ctx.fl.steps[ctx.i][1])}</strong></div>`;
     else if (hist.length) h += `<button class="back" data-act="back">‹ ${esc(infoOf(hist[hist.length - 1]).n)}</button>`;
@@ -2147,6 +2147,7 @@ return (function () {
   function leave() {
     return new Promise(res => {
       exitModes(); closeMenu(); tip.hidden = true;
+      APP.focus = null; clearMarks(); clearRelLines();         // sem rótulos presos a um caminho que já foi encerrado
       $('#stage').classList.add('leaving'); panel.classList.add('leaving');
       if (reduceMotion) { setTimeout(res, 180); return; }
       APP.drive = { from: carRoot.position.x, to: carRoot.position.x + 2.4, t0: performance.now(), dur: 480, ease: k => k * k, done: res };
