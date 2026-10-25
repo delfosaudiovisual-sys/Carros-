@@ -10,7 +10,7 @@ function appHTML(CAR, opts) {
       <span class="txt"><strong><span class="full">${e(CAR.title)}</span><span class="short">${e(CAR.short || CAR.name)}</span></strong><span>${e(CAR.sub)}</span></span>
       ${many ? '<span class="swap" aria-hidden="true"></span>' : ''}
     </button>
-    <button id="fichaBtn" class="hbtn" type="button">Ficha técnica</button>
+    <button id="fichaBtn" class="hbtn" type="button" aria-label="Ficha técnica">Ficha<span class="wide-only"> técnica</span></button>
     <div class="search"><input id="q" type="search" placeholder="Buscar peça, código ou parafuso" autocomplete="off" enterkeyhint="search" aria-label="Buscar peça, código ou parafuso"><ul id="qres" hidden></ul></div>
   </header>
   <main id="stage">

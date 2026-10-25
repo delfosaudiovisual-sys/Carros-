@@ -287,6 +287,7 @@ button.mi:focus-visible { background: var(--panel-2); }
   #toolbar { flex-wrap: nowrap; right: 8px; left: 8px; top: 8px; }
   .dhead h2 { font-size: 19px; }
 }
+@media (max-width: 480px) { .hbtn .wide-only { display: none; } }
 @media (prefers-reduced-motion: reduce) { * { transition-property: opacity, color, background-color, border-color !important; scroll-behavior: auto !important; } .pin.cur { animation: none; } }
 
 /* ===== Toque, pressão e passar o mouse ===== */
