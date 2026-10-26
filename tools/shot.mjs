@@ -1,6 +1,6 @@
 // Abre o app num Chromium sem tela, troca a CDN do three.js por arquivos locais,
 // junta os erros do console e tira capturas. Uso:
-//   node tools/shot.mjs <arquivo.html> <saida-prefixo> [script.js]
+//   node tools/shot.mjs <arquivo.html> <saida-prefixo> [script.js]      (W, H, WAIT, Q e TOUCH=1 por variável de ambiente)
 // O script opcional recebe (page, shot) e pode clicar, girar a câmera etc.
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -13,7 +13,8 @@ const vendor = process.env.THREE_DIR;            // pasta "package" do three@0.1
 const W = +(process.env.W || 1400), H = +(process.env.H || 860);
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist'] });
-const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+const touch = !!process.env.TOUCH;                // TOUCH=1 emula celular: toque, ponteiro grosso, sem hover
+const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
 const errors = [];
 page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${m.type()}] ${m.text()}`); });
 page.on('pageerror', e => errors.push('[pageerror] ' + (e.stack || e.message)));

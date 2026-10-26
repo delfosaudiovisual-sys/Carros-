@@ -2,19 +2,20 @@
 function appHTML(CAR, opts) {
   const e = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const many = (opts.count || 1) > 1;
+  const tap = matchMedia('(hover: hover) and (pointer: fine)').matches ? 'Clique' : 'Toque';
   return `<div id="app" class="${opts.enter ? 'entering' : ''}">
   <div id="menu" role="menu" aria-label="Opções do modelo" hidden></div>
   <header>
     <button id="carBtn" class="brand" type="button" ${many ? 'aria-haspopup="dialog" aria-expanded="false"' : 'disabled'} aria-label="${e(CAR.title)}${many ? '. Trocar de carro' : ''}">
       <span class="num" aria-hidden="true">${e(CAR.badge)}</span>
       <span class="txt"><strong><span class="full">${e(CAR.title)}</span><span class="short">${e(CAR.short || CAR.name)}</span></strong><span>${e(CAR.sub)}</span></span>
-      ${many ? '<span class="swap" aria-hidden="true"></span>' : ''}
+      ${many ? `<span class="swap" aria-hidden="true"><i></i><span>Trocar carro</span></span>` : ''}
     </button>
     <button id="fichaBtn" class="hbtn" type="button" aria-label="Ficha técnica">Ficha<span class="wide-only"> técnica</span></button>
-    <div class="search"><input id="q" type="search" placeholder="Buscar peça, código ou parafuso" autocomplete="off" enterkeyhint="search" aria-label="Buscar peça, código ou parafuso"><ul id="qres" hidden></ul></div>
+    <div class="search"><input id="q" type="search" placeholder="Buscar peça, código ou parafuso" autocomplete="off" enterkeyhint="search" aria-label="Buscar peça, código ou parafuso" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="qres"><kbd class="slash" aria-hidden="true">/</kbd><ul id="qres" role="listbox" aria-label="Resultados da busca" hidden></ul></div>
   </header>
   <main id="stage">
-    <canvas id="c" aria-label="Modelo 3D do ${e(CAR.name)}. Toque numa peça para ver detalhes."></canvas>
+    <canvas id="c" aria-label="Modelo 3D do ${e(CAR.name)}. ${tap} numa peça para ver detalhes."></canvas>
     <div id="labels"></div>
     <div id="tip" hidden></div>
     <div id="toolbar">
@@ -26,18 +27,18 @@ function appHTML(CAR, opts) {
       <button class="tbtn mbtn" data-menu="vistas" aria-haspopup="true" aria-expanded="false">Vistas</button>
       <button class="tbtn mbtn more" data-menu="mais" aria-haspopup="true" aria-expanded="false">Mais</button>
     </div>
-    <div id="hint" hidden>Toque numa peça para ver o que ela faz</div>
+    <div id="hint" hidden>${tap} numa peça para ver o que ela faz</div>
   </main>
   <div id="panel">
     <button id="grab" aria-label="Expandir painel"></button>
     <aside id="left">
       <nav id="tabs" role="tablist">
-        <button role="tab" data-tab="sistemas" aria-selected="true">Sistemas</button>
-        <button role="tab" data-tab="fluxos" aria-selected="false">Como funciona</button>
-        <button role="tab" data-tab="sintomas" aria-selected="false">Sintomas</button>
-        <button role="tab" data-tab="revisoes" aria-selected="false">Revisões</button>
+        <button role="tab" id="tab-sistemas" data-tab="sistemas" aria-selected="true" aria-controls="tabbody">Sistemas</button>
+        <button role="tab" id="tab-fluxos" data-tab="fluxos" aria-selected="false" aria-controls="tabbody" tabindex="-1">Como funciona</button>
+        <button role="tab" id="tab-sintomas" data-tab="sintomas" aria-selected="false" aria-controls="tabbody" tabindex="-1">Sintomas</button>
+        <button role="tab" id="tab-revisoes" data-tab="revisoes" aria-selected="false" aria-controls="tabbody" tabindex="-1">Revisões</button>
       </nav>
-      <div id="tabbody"></div>
+      <div id="tabbody" role="tabpanel" aria-labelledby="tab-sistemas"></div>
     </aside>
     <aside id="right"><div id="detail"></div></aside>
   </div>
@@ -879,7 +880,9 @@ function updateEngine(theta) {
 
 /* ---------- câmera ---------- */
 let tween = null;
+let atHome = false;                                  // câmera ainda na vista inicial (a pessoa não girou nem abriu nada)
 function flyTo(target, pos, dur) {
+  atHome = false;
   if (reduceMotion || dur === 0) { controls.target.copy(target); camera.position.copy(pos); controls.update(); return; }
   tween = { t0: performance.now(), dur: dur || 750, a: { t: controls.target.clone(), p: camera.position.clone() }, b: { t: target.clone(), p: pos.clone() } };
 }
@@ -911,6 +914,9 @@ function fitDist(t, dir, box, pad) {
   const h = Math.max(1, renderer.domElement.clientHeight), top = 1 - 2 * (TOP_SAFE + 6) / h;
   _fitCam.copy(camera); _fitCam.up.set(0, 1, 0);
   const cs = []; for (let k = 0; k < 8; k++) cs.push(V(k & 1 ? box.max.x : box.min.x, k & 2 ? box.max.y : box.min.y, k & 4 ? box.max.z : box.min.z));
+  if (box === CAR_BOX) {                              // o teto é bem menor que a planta: as quinas de cima da caixa ficam no vazio e encolhiam o carro na tela
+    const c = box.getCenter(V(0, 0, 0)); cs.forEach(p => { if (p.y > c.y) { p.x = c.x + (p.x - c.x) * 0.72; p.z = c.z + (p.z - c.z) * 0.8; } });
+  }
   const mx = pad == null ? 0.92 : pad, fits = d => {
     _fitCam.position.copy(t).addScaledVector(dir, d); _fitCam.lookAt(t); _fitCam.updateMatrixWorld(); _fitCam.updateProjectionMatrix();
     return cs.every(c => { const p = c.clone().project(_fitCam); return p.z < 1 && Math.abs(p.x) < mx && p.y < Math.min(mx, top) && p.y > -mx; });
@@ -922,7 +928,7 @@ function fitDist(t, dir, box, pad) {
 function homeTarget() { return camera.aspect < 0.8 ? V(0.25, 0.62, 0) : HOME.t.clone(); }
 function homeDir() { return camera.aspect < 0.8 ? HOME.dirTall.clone() : HOME.dir.clone(); }
 function homePos() { const t = homeTarget(), d = homeDir(); return t.clone().addScaledVector(d, fitDist(t, d)); }
-function homeView(dur) { flyTo(homeTarget(), homePos(), dur); }
+function homeView(dur) { flyTo(homeTarget(), homePos(), dur); atHome = true; }
 /* vistas prontas: olham para a peça escolhida ou para o carro todo */
 const PRESETS = { frente: V(1, 0.3, -0.12), traseira: V(-1, 0.32, 0.12), lado: V(0.08, 0.22, -1), cima: V(0.04, 1, -0.03), baixo: V(0.3, -0.85, -0.35) };
 function presetView(name) {
@@ -1410,6 +1416,8 @@ function dmStop() {
 return (function () {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const TAP = matchMedia('(hover: hover) and (pointer: fine)').matches ? 'Clique' : 'Toque';
+  const SHARE = TAP === 'Toque' && typeof navigator.share === 'function';     // no celular, abre o menu de compartilhar; no computador, copia
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const km = n => Math.round(n).toLocaleString('pt-BR');
@@ -1469,12 +1477,14 @@ return (function () {
     setFocus(F); renderDetail(id); fitIds([id], 1.1); sheet('detail'); hideHint(); tip.hidden = true;
     if (APP.explode > 0) { EXPL.refit = true; EXPL.ids = [id]; }
     if (tab === 'sistemas') markPart(id);
+    welcomeSeen(); if (opts.onRoute) opts.onRoute(id);
   }
   function goBack() { const id = hist.pop(); if (id) select(id, !!APP.symptom, true); }
   function clearSelection() {
     const hadMode = APP.flow || APP.symptom; exitModes(); hist.length = 0;
     APP.focus = null; applyStates(); explodeTargets(); clearRelLines(); renderDetail(null); renderLabels(true); sheet('tabs');
     if (hadMode) renderTab();
+    if (opts.onRoute) opts.onRoute(null);
     $$('.syslist details[open]').forEach(d => d.open = false);
     recoilIfClose();
   }
@@ -1592,6 +1602,25 @@ return (function () {
     if (!pr.oem && PARTS[id]) h += `<p class="alt">${esc(CAR.oemHint || 'Código original: confirme pelo número do chassi no balcão de peças.')}</p>`;
     return h;
   }
+  /* resumo em texto puro da peça, para mandar ao mecânico ou aos amigos */
+  function partSummary(id) {
+    const inf = infoOf(id), pr = PROC[id] || {}, L = [`${inf.n} — ${CAR.title} (${CAR.sub})`, `Ref. no app: ${CODE[id]}`];
+    [].concat(pr.oem || []).forEach(c => L.push(Array.isArray(c) ? `${c[0]}: ${c[1]}` : `${CAR.oemLabel || 'Código original'}: ${c}`));
+    if (inf.kind === 'fix') { const f = inf.d; L.push(`Prende: ${PARTS[f.p].n}`, `Quantidade: ${f.q}`, `Onde: ${f.spec}`, `${f.k === 'parafuso' ? 'Aperto' : 'Método'}: ${f.t}`, f.note); }
+    else { if (inf.d.w) L.push(`Onde fica: ${inf.d.w}`); if (inf.d.f) L.push(`O que faz: ${inf.d.f}`); }
+    if (pr.f) L.push('', `Ferramentas: ${pr.f}`);
+    if (pr.pre) L.push(`Antes: ${pr.pre}`);
+    [['Desmontar', pr.d], ['Montar', pr.m]].forEach(([t, st]) => { if (st && st.length) L.push('', t + ':', ...st.map((x, i) => `${i + 1}. ${x}`)); });
+    L.push('', 'Valores de referência: confirme no manual do carro.');
+    return L.join('\n');
+  }
+  function sharePart(b, id) {
+    const text = partSummary(id), lb = b.lastChild, t0 = lb.textContent;
+    const done = msg => { b.classList.add('copied'); lb.textContent = msg; setTimeout(() => { b.classList.remove('copied'); lb.textContent = t0; }, 1600); };
+    const copy = () => { try { navigator.clipboard.writeText(text).then(() => done('Copiado'), () => done('Não deu para copiar')); } catch (e) { done('Não deu para copiar'); } };
+    if (SHARE) navigator.share({ title: infoOf(id).n, text }).catch(err => { if (!err || err.name !== 'AbortError') copy(); });
+    else copy();
+  }
   function stepsHTML(list) { return `<ol class="proc">${list.map(t => `<li>${esc(t)}</li>`).join('')}</ol>`; }
   function fxTable(fx) { return `<table class="fx"><thead><tr><th>Qtd.</th><th>Fixador</th><th>Aperto ou método</th></tr></thead><tbody>${fx.map(f => `<tr data-id="${f.id}"><td>${esc(f.q)}</td><td><button class="link" data-id="${f.id}"><span class="kd k-${f.k}"></span>${esc(f.n)}</button><small>${esc(f.spec)}</small></td><td>${esc(f.t)}</td></tr>`).join('')}</tbody></table>`; }
   /* desmontar e montar: o texto do carro; sem ele, um roteiro mínimo a partir dos fixadores */
@@ -1629,7 +1658,7 @@ return (function () {
     h += codesHTML(id);
     if (!ctx) {
       const gd = GUIDE_BY_PART[id] || (inf.kind === 'fix' && GUIDE_BY_PART[FIX[id].p]);
-      h += `<div class="acts"><button class="act" data-act="explode" aria-pressed="${APP.explode > 0}">${APP.explode > 0 ? 'Juntar peças' : 'Separar peças'}</button>${gd ? `<button class="act dm" data-guide="${gd.id}">Desmontagem em 3D</button>` : ''}</div>`;
+      h += `<div class="acts"><button class="act" data-act="explode" aria-pressed="${APP.explode > 0}">${APP.explode > 0 ? 'Juntar peças' : 'Separar peças'}</button>${gd ? `<button class="act dm" data-guide="${gd.id}">Desmontagem em 3D</button>` : ''}<button class="act share" data-act="share" title="${SHARE ? 'Enviar' : 'Copiar'} o resumo da peça: códigos, onde fica e o passo a passo"><span>${SHARE ? 'Enviar' : 'Copiar resumo'}</span></button></div>`;
     }
     if (inf.kind === 'fix') {
       const f = inf.d;
@@ -1670,6 +1699,7 @@ return (function () {
     if (b.dataset.act === 'close') return clearSelection();
     if (b.dataset.act === 'back') return goBack();
     if (b.dataset.act === 'explode') return setExplode(APP.explode > 0 ? 0 : 0.6);
+    if (b.dataset.act === 'share') return sharePart(b, detail.dataset.id);
     if (b.dataset.guide) { goTab('fluxos'); startGuide(b.dataset.guide); return; }
     if (b.dataset.sym) { goTab('sintomas'); openSymptom(b.dataset.sym); return; }
     if (b.dataset.flow) { goTab('fluxos'); startFlow(b.dataset.flow); return; }
@@ -1678,8 +1708,21 @@ return (function () {
   });
 
   /* ---------- abas ---------- */
-  function goTab(t) { tab = t; $$('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t)); $('#fichaBtn').setAttribute('aria-pressed', t === 'ficha'); renderTab(); }
-  $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.tab !== tab) { if (APP.flow || APP.symptom) clearSelection(); goTab(b.dataset.tab); } if (panel.dataset.sheet === 'peek') setSheet('half'); });
+  /* a aba marcada acompanha o que o painel mostra (um caminho aberto pelo painel da peça marca "Como funciona") */
+  function markTab(t) {
+    tab = t; const bs = $$('#tabs button');
+    bs.forEach(b => { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+    if (!bs.some(b => b.dataset.tab === t)) bs[0].tabIndex = 0;
+    tabbody.setAttribute('aria-labelledby', bs.some(b => b.dataset.tab === t) ? 'tab-' + t : 'fichaBtn');
+    $('#fichaBtn').setAttribute('aria-pressed', t === 'ficha');
+  }
+  function goTab(t) { markTab(t); renderTab(); }
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.tab !== tab || APP.flow || APP.symptom) { if (APP.flow || APP.symptom) clearSelection(); goTab(b.dataset.tab); } if (panel.dataset.sheet === 'peek') setSheet('half'); });
+  $('#tabs').addEventListener('keydown', e => {       // setas, Home e End trocam de aba (padrão de abas acessíveis)
+    const bs = $$('#tabs button'), i = bs.indexOf(document.activeElement); if (i < 0) return;
+    const j = e.key === 'ArrowRight' ? (i + 1) % bs.length : e.key === 'ArrowLeft' ? (i - 1 + bs.length) % bs.length : e.key === 'Home' ? 0 : e.key === 'End' ? bs.length - 1 : -1;
+    if (j < 0) return; e.preventDefault(); bs[j].focus(); bs[j].click();
+  });
   function renderTab() {
     tabbody.scrollTop = 0;
     if (tab === 'sistemas') renderSistemas();
@@ -1693,13 +1736,15 @@ return (function () {
   function welcomeHTML() {
     if (welcomeOff) return '';
     const nParts = Object.keys(PARTS).length, nFix = Object.values(FIX).reduce((a, f) => a + (typeof f.q === 'number' ? f.q : 0), 0);
-    return `<section class="welcome"><button class="close" data-act="welcome-off" aria-label="Fechar as boas-vindas">×</button>
-      <h2>Por dentro do seu carro</h2>
-      <p>Arraste para girar e use a pinça ou a rodinha para aproximar. Toque numa peça para ver o que ela faz, o código dela, como é presa, como sai e volta, e quando pede manutenção.</p>
+    return `<section class="welcome" aria-labelledby="wtitle"><button class="close" data-act="welcome-off" aria-label="Fechar as boas-vindas">×</button>
+      <h2 id="wtitle">Por dentro do seu carro</h2>
+      <p>Arraste para girar e use ${TAP === 'Clique' ? 'a rodinha' : 'a pinça'} para aproximar. ${TAP} numa peça para ver o que ela faz, o código dela, como é presa e como sai e volta.</p>
       <p class="count"><strong>${nParts}</strong> peças e conjuntos e <strong>${nFix}</strong> fixadores mapeados.</p>
+      <p class="wlabel">Comece por</p>
       <div class="chips">${(CAR.welcome || []).filter(id => REG[id]).map(chip).join('')}</div>
-      <p class="ways">Cada peça tem código e a aba <strong>Desmontar e montar</strong>. Em <button class="link" data-tabgo="fluxos">Como funciona</button>, o caminho do ar, do combustível, da força e da faísca aparece animado, passo a passo. Para ver outro carro, toque no nome dele lá em cima.</p></section>`;
+      <p class="wtips">Em <button class="link" data-tabgo="fluxos">Como funciona</button>, o caminho do ar, do combustível, da força e da faísca aparece animado, passo a passo.</p></section>`;
   }
+  function welcomeSeen() { if (!welcomeOff) { welcomeOff = true; store.set(WKEY, '1'); } }   // na próxima visita o painel já abre direto na lista
   const plist = ids => `<ul class="plist">${ids.map(i => `<li><button data-id="${i}">${esc(infoOf(i).n)}</button></li>`).join('')}</ul>`;
   function renderSistemas() {
     let h = welcomeHTML() + '<p class="lead">Abra um sistema para destacá-lo no carro e ver suas peças.</p><div class="syslist">';
@@ -1785,7 +1830,7 @@ return (function () {
     let c = fl.c; fl.steps.forEach((st, i) => { const o = stepOpts(st); if (o.c) c = o.c; flowColor[i] = c; if (o.c2) c = o.c2; });
     flowDraw(); FLOW.t0 = performance.now() + 500; fluxMode = 'caminhos';
     APP.motion = flowMotion(fl, 0);
-    flowFocus(); tabbody.scrollTop = 0; renderFluxos(); hideHint(); sheet('tabs'); flowDetail();
+    flowFocus(); markTab('fluxos'); tabbody.scrollTop = 0; renderFluxos(); hideHint(); sheet('tabs'); flowDetail(); if (opts.onRoute) opts.onRoute(null);
     const b = flowWholeBox(); if (!b.isEmpty()) { const ctr = b.getCenter(V(0, 0, 0)), dir = camera.position.clone().sub(controls.target).normalize(); flyTo(ctr, ctr.clone().addScaledVector(dir, Math.min(9, fitDist(ctr, dir, b, 0.8)))); }
   }
   function flowFocus() {
@@ -1803,7 +1848,7 @@ return (function () {
     if (APP.intro) endIntro();
     DM.prevView = APP.view; if (APP.view !== 'solid') { APP.view = 'solid'; syncView(); }
     dmStart(g); FLOW.t0 = performance.now() + 500;
-    flowFocus(); tabbody.scrollTop = 0; renderFluxos(); hideHint(); sheet('tabs'); flowDetail();
+    flowFocus(); markTab('fluxos'); tabbody.scrollTop = 0; renderFluxos(); hideHint(); sheet('tabs'); flowDetail(); if (opts.onRoute) opts.onRoute(null);
     const b = flowWholeBox();
     if (!b.isEmpty()) {
       const c = b.getCenter(V(0, 0, 0)), dir = camera.position.clone().sub(controls.target).normalize().multiplyScalar(0.5).add(viewDirFor(c).multiplyScalar(0.5)).normalize();
@@ -1876,7 +1921,7 @@ return (function () {
     const sy = SYMPTOMS.find(s => s.id === sid); if (!sy) return;
     exitModes(); hist.length = 0; APP.symptom = sy; const ids = sy.s.map(x => x[0]);
     setFocus({ kind: 'symptom', primary: new Set(), related: new Set(ids), order: ids }); fitIds(ids, 1.0, true);
-    renderDetail(null); renderSintomas(); hideHint(); sheet('tabs');
+    renderDetail(null); markTab('sintomas'); renderSintomas(); hideHint(); sheet('tabs'); if (opts.onRoute) opts.onRoute(null);
   }
 
   /* ---------- revisões ---------- */
@@ -1923,16 +1968,30 @@ return (function () {
   const q = $('#q'), qres = $('#qres');
   const codeKey = id => { const c = [CODE[id], ...[].concat((PROC[id] || {}).oem || []).map(o => Array.isArray(o) ? o[1] : o), ...[].concat((PROC[id] || {}).alt || [])].join(' '); return ' ' + c + ' ' + c.replace(/[-.\s]/g, ''); };
   const INDEX = [...Object.values(PARTS).map(p => ({ id: p.id, n: p.n, s: p.s, k: norm(p.n + ' ' + p.w + codeKey(p.id)) })), ...Object.values(FIX).map(f => ({ id: f.id, n: f.n, s: PARTS[f.p].s, k: norm(f.n + ' ' + f.spec + ' parafuso porca' + codeKey(f.id)) }))];
+  let qi = -1;                                       // resultado marcado pelas setas (o Enter abre esse)
+  const qopts = () => $$('button', qres);
+  function qmark(i) {
+    const bs = qopts(); qi = bs.length ? (i + bs.length) % bs.length : -1;
+    bs.forEach((b, k) => { b.classList.toggle('kb', k === qi); b.setAttribute('aria-selected', k === qi); });
+    if (qi >= 0) { q.setAttribute('aria-activedescendant', bs[qi].id); bs[qi].scrollIntoView({ block: 'nearest' }); } else q.removeAttribute('aria-activedescendant');
+  }
+  function qclose() { qres.hidden = true; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); qi = -1; }
   q.addEventListener('input', () => {
-    const t = norm(q.value.trim()); if (!t) { qres.hidden = true; return; }
+    const t = norm(q.value.trim()); if (!t) { qclose(); return; }
     const words = t.split(/\s+/);
     const res = INDEX.filter(e => words.every(w => e.k.includes(w))).sort((a, b) => (norm(a.n).startsWith(t) ? 0 : 1) - (norm(b.n).startsWith(t) ? 0 : 1)).slice(0, 12);
-    qres.innerHTML = res.length ? res.map(r => `<li><button data-id="${r.id}"><span class="dot" style="--c:${SYS[r.s].c}"></span>${esc(r.n)}<small>${esc(CODE[r.id])}</small></button></li>`).join('') : '<li class="none">Nada com esse nome ou código</li>';
-    qres.hidden = false;
+    qres.innerHTML = res.length ? res.map((r, k) => `<li role="presentation"><button id="qo-${k}" role="option" aria-selected="false" tabindex="-1" data-id="${r.id}"><span class="dot" style="--c:${SYS[r.s].c}"></span>${esc(r.n)}<small>${esc(CODE[r.id])}</small></button></li>`).join('') : '<li class="none" role="presentation">Nada com esse nome ou código</li>';
+    qres.hidden = false; q.setAttribute('aria-expanded', 'true'); qmark(0);
   });
-  q.addEventListener('keydown', e => { if (e.key === 'Enter') { const b = $('button', qres); if (b) b.click(); } if (e.key === 'Escape') { q.value = ''; qres.hidden = true; } });
-  qres.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; qres.hidden = true; q.value = ''; q.blur(); select(b.dataset.id); });
-  document.addEventListener('click', e => { if (!e.target.closest('.search')) qres.hidden = true; }, sig);
+  q.addEventListener('keydown', e => {
+    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !qres.hidden) { e.preventDefault(); qmark(qi + (e.key === 'ArrowDown' ? 1 : -1)); return; }
+    if (e.key === 'Enter') { const b = qopts()[Math.max(0, qi)]; if (b) b.click(); }
+    if (e.key === 'Escape') { if (!qres.hidden || q.value) { e.stopPropagation(); q.value = ''; qclose(); } else q.blur(); }
+  });
+  q.addEventListener('blur', () => setTimeout(() => { if (!qres.contains(document.activeElement)) qclose(); }, 120));
+  qres.addEventListener('mousedown', e => e.preventDefault());                  // o clique no resultado não tira o foco antes de abrir
+  qres.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; qclose(); q.value = ''; q.blur(); select(b.dataset.id); });
+  document.addEventListener('click', e => { if (!e.target.closest('.search')) qclose(); }, sig);
 
   /* ---------- barra: vista + menus Abrir, Mostrar e Vistas ---------- */
   const syncView = () => $$('#viewseg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === APP.view));
@@ -2042,7 +2101,7 @@ return (function () {
     else { tip.hidden = true; canvas.style.cursor = ''; }
   }
   controls.addEventListener('start', () => {
-    tip.hidden = true; hideHint(); closeMenu();
+    atHome = false; tip.hidden = true; hideHint(); closeMenu();
     if (APP.flow && APP.follow) { APP.follow = false; syncPlayer(); }
   });
 
@@ -2050,6 +2109,7 @@ return (function () {
   document.addEventListener('keydown', e => {
     const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
     if (e.key === 'Escape') { if (!menu.hidden) { closeMenu(); return; } if (typing) return; if (APP.focus || APP.flow || APP.symptom) clearSelection(); return; }
+    if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); q.focus(); q.select(); return; }
     if (typing || !APP.flow || e.altKey || e.ctrlKey || e.metaKey) return;
     const n = APP.flow.steps.length;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); gotoStep(Math.min(n - 1, APP.flowStep + 1), true); }
@@ -2080,7 +2140,15 @@ return (function () {
     marks.forEach(m => { m.w = m.h = 0; });
   }
   let firstSize = true;
-  ro = new ResizeObserver(() => { resize(); if (firstSize && canvas.clientWidth) { firstSize = false; homeView(0); } if (!menu.hidden) closeMenu(); }); ro.observe(canvas); resize();
+  let refit = 0;
+  ro = new ResizeObserver(() => {
+    resize(); if (!menu.hidden) closeMenu();
+    if (!firstSize && atHome && !APP.focus && !APP.flow && !APP.symptom) { clearTimeout(refit); refit = setTimeout(() => { if (atHome) homeView(420); }, 140); }   // a gaveta subiu ou desceu: reenquadra o carro
+    if (!firstSize || !canvas.clientWidth) return;
+    firstSize = false; homeView(0);
+    if (opts.part && REG[opts.part]) { endIntro(); select(opts.part); }   // endereço com a peça: abre direto nela
+    else if (opts.part && opts.onRoute) opts.onRoute(null);
+  }); ro.observe(canvas); resize();
 
   /* ---------- laço de renderização ---------- */
   let last = performance.now();

@@ -10,20 +10,33 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const KEY = 'carros-atual';
   const byId = id => CARS.find(c => c.id === id);
-  const fromHash = () => { const h = decodeURIComponent(location.hash.slice(1)); return byId(h) ? h : null; };
+  const hashParts = () => decodeURIComponent(location.hash.slice(1)).split('/');      // #carro ou #carro/peça
+  const fromHash = () => { const h = hashParts()[0]; return byId(h) ? h : null; };
+  const route = (car, pid) => { const h = car + (pid ? '/' + pid : ''); if (decodeURIComponent(location.hash.slice(1)) !== h) { try { history.replaceState(null, '', '#' + h); } catch (e) { } } };
   let cur = null, curId = null, busy = false;
 
-  function mount(id, enter) {
+  function mount(id, enter, part) {
     const car = byId(id) || CARS[0];
     curId = car.id; store.set(KEY, car.id);
-    if (location.hash.slice(1) !== car.id) { try { history.replaceState(null, '', '#' + car.id); } catch (e) { } }
-    cur = window.mountCar(car, { host: root, enter, count: CARS.length, onPick: toggleGarage });
+    route(car.id, part);
+    cur = window.mountCar(car, { host: root, enter, part, count: CARS.length, onPick: toggleGarage, onRoute: pid => route(car.id, pid) });
+  }
+  /* aviso de montagem: a geometria do carro novo é gerada de uma vez e segura a tela por um instante */
+  const paint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  function showLoader(car) {
+    const st = document.getElementById('stage'), r = st ? st.getBoundingClientRect() : { left: 0, top: 0, width: innerWidth, height: innerHeight };
+    const el = document.createElement('div'); el.id = 'loader'; el.setAttribute('role', 'status');
+    el.innerHTML = `<span class="spin" aria-hidden="true"></span><span>Montando o ${esc(car.name)}…</span>`;
+    el.style.left = (r.left + r.width / 2) + 'px'; el.style.top = (r.top + r.height / 2) + 'px';
+    document.body.appendChild(el); return el;
   }
   async function switchTo(id) {
     if (busy || id === curId || !byId(id)) return;
     busy = true; closeGarage(false);
     try { await cur.leave(); } catch (e) { }
+    const ld = showLoader(byId(id)); await paint();
     cur.destroy(); mount(id, true);
+    ld.classList.add('out'); setTimeout(() => ld.remove(), 260);
     const b = document.getElementById('carBtn'); if (b) b.focus({ preventScroll: true });   // o foco volta ao nome do carro, não se perde no body
     busy = false;
   }
@@ -72,7 +85,10 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !gar.hidden) { e.stopPropagation(); closeGarage(true); } }, true);
   document.addEventListener('pointerdown', e => { if (!gar.hidden && !e.target.closest('#garage') && !e.target.closest('#carBtn')) closeGarage(false); });
   window.addEventListener('resize', () => closeGarage(false));
-  window.addEventListener('hashchange', () => { const id = fromHash(); if (id && id !== curId) switchTo(id); });
+  window.addEventListener('hashchange', () => {
+    const id = fromHash(), pid = hashParts()[1];
+    if (id && id !== curId) switchTo(id); else if (id && pid && cur && cur.api) cur.api.select(pid);
+  });
 
-  mount(fromHash() || (byId(store.get(KEY)) ? store.get(KEY) : CARS[0].id), false);
+  mount(fromHash() || (byId(store.get(KEY)) ? store.get(KEY) : CARS[0].id), false, fromHash() ? hashParts()[1] : null);
 })();

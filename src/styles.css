@@ -52,16 +52,21 @@ header { grid-area: top; display: flex; align-items: center; gap: 18px; padding:
 .brand strong { font-size: 14px; font-weight: 650; white-space: nowrap; }
 .brand .txt > span { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand .short { display: none; }
-.brand .swap { flex: none; width: 22px; height: 22px; border-radius: 6px; background: var(--panel-2); position: relative; }
-.brand .swap::before, .brand .swap::after { content: ''; position: absolute; left: 7px; width: 6px; height: 6px; border-right: 1.5px solid var(--ink-2); border-bottom: 1.5px solid var(--ink-2); }
-.brand .swap::before { top: 5px; transform: rotate(-135deg); }
-.brand .swap::after { top: 10px; transform: rotate(45deg); }
+.brand .swap { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 8px; margin-left: 4px; border: 1px solid var(--rule); border-radius: 999px; background: var(--bg); color: var(--ink-2); font-size: 12px; font-weight: 620; white-space: nowrap; transition: border-color 140ms var(--ease-out), color 140ms var(--ease-out); }
+.brand .swap i { position: relative; width: 8px; height: 14px; flex: none; }
+.brand .swap i::before, .brand .swap i::after { content: ''; position: absolute; left: 1px; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; }
+.brand .swap i::before { top: 2px; transform: rotate(-135deg); }
+.brand .swap i::after { top: 7px; transform: rotate(45deg); }
+.brand[aria-expanded="true"] .swap { color: var(--ink); border-color: var(--ink-2); }
 .brand[aria-expanded="true"] { background: var(--panel-2); border-color: var(--rule); }
 .hbtn { margin-left: auto; border: 1px solid var(--rule); background: var(--bg); border-radius: 8px; height: 36px; padding: 0 12px; font-size: 13px; font-weight: 580; white-space: nowrap; color: var(--ink); flex: none; }
 .hbtn[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
 .search { position: relative; width: min(360px, 42vw); }
 .tabtitle { font-stretch: 110%; font-size: 18px; margin: 0 0 12px; }
-.search input { width: 100%; height: 36px; border: 1px solid var(--rule); border-radius: 8px; padding: 0 12px; background: var(--bg); }
+.search input { width: 100%; height: 36px; border: 1px solid var(--rule); border-radius: 8px; padding: 0 34px 0 12px; background: var(--bg); }
+.slash { position: absolute; right: 8px; top: 8px; height: 20px; min-width: 20px; padding: 0 5px; display: grid; place-items: center; border: 1px solid var(--rule); border-radius: 5px; background: var(--panel); color: var(--ink-2); font: 600 11px/1 var(--font); pointer-events: none; }
+.search input:focus + .slash, .search input:not(:placeholder-shown) + .slash { visibility: hidden; }
+@media (hover: none), (pointer: coarse) { .slash { display: none; } .search input { padding-right: 12px; } }
 .search input::placeholder { color: var(--ink-2); }
 #qres { position: absolute; top: 40px; left: 0; right: 0; list-style: none; margin: 0; padding: 4px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); z-index: 30; max-height: 60vh; overflow: auto; }
 #qres button { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 6px; }
@@ -188,8 +193,8 @@ header { grid-area: top; display: flex; align-items: center; gap: 18px; padding:
 #detail section { border-top: 1px solid var(--rule); padding: 11px 0 3px; }
 #detail section p { margin: 0 0 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); background: var(--bg); border-radius: 999px; padding: 3px 10px 3px 8px; font-size: 12.5px; }
-.chip::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); background: var(--bg); border-radius: 999px; padding: 4px 11px 4px 9px; font-size: 12.5px; line-height: 1.3; text-align: left; max-width: 100%; }
+.chip::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
 table.fx { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 8px; }
 table.fx th { text-align: left; font-weight: 600; color: var(--ink-2); padding: 0 6px 4px 0; font-size: 11.5px; }
 table.fx td { border-top: 1px solid var(--rule); padding: 6px 6px 6px 0; vertical-align: top; font-variant-numeric: tabular-nums; }
@@ -208,7 +213,9 @@ table.fx small { display: block; color: var(--ink-2); }
 .welcome h2 { font-stretch: 110%; font-size: 18px; margin: 0 34px 6px 0; line-height: 1.2; }
 .welcome p { margin: 0 0 8px; font-size: 13.5px; }
 .welcome .close { top: 9px; right: 9px; width: 28px; height: 28px; }
-.welcome .ways { color: var(--ink-2); font-size: 13px; }
+.welcome .wlabel { margin: 12px 0 6px; font-size: 11.5px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+.welcome .chips { margin-bottom: 10px; }
+.welcome .wtips { color: var(--ink-2); font-size: 13px; padding-top: 9px; border-top: 1px solid var(--rule); }
 .count { color: var(--ink-2); font-size: 13px; }
 .count strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 
@@ -272,6 +279,8 @@ button.mi:focus-visible { background: var(--panel-2); }
   .brand { gap: 7px; padding-right: 6px; }
   .brand .txt > span, .brand .full { display: none; }
   .brand .short { display: inline; }
+  .brand .swap { width: 30px; height: 30px; padding: 0; justify-content: center; margin-left: 0; }
+  .brand .swap span { display: none; }
   .search { width: auto; flex: 1; order: 2; }
   .hbtn { order: 3; margin-left: 0; padding: 0 10px; }
   #panel { grid-area: panel; display: flex; flex-direction: column; min-height: 0; background: var(--panel); border-top: 1px solid var(--rule); box-shadow: 0 -8px 24px rgba(0, 0, 0, .08); border-radius: 14px 14px 0 0; }
@@ -301,9 +310,16 @@ button.mi:focus-visible { background: var(--panel-2); }
   .modes button:hover { border-color: var(--ink-2); border-left-color: var(--c, var(--ink-2)); }
   .act:hover, .chip:hover, .vb:hover, .hbtn:hover, .tbtn:hover, .code:hover { border-color: var(--ink-2); }
   .brand:not(:disabled):hover { background: var(--panel-2); }
+  .brand:not(:disabled):hover .swap { color: var(--ink); border-color: var(--ink-2); }
   .gcar:hover { border-color: var(--ink-2); }
 }
-@media (pointer: coarse) { .search input, .kmnow input, .rev input { font-size: 16px; } }
+@media (pointer: coarse) {
+  .search input, .kmnow input, .rev input { font-size: 16px; }
+  .chip { min-height: 36px; padding: 6px 12px 6px 10px; }       /* alvos de toque maiores: dedo não é cursor */
+  .seg button { min-height: 32px; padding: 6px 11px; }
+  .plist button { min-height: 40px; }
+  .syslist summary { min-height: 46px; }
+}
 
 /* ===== Menus: abrem a partir do botão ===== */
 #menu, #garage { transform-origin: var(--origin, top left); transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out); }
@@ -324,6 +340,8 @@ button.mi:focus-visible { background: var(--panel-2); }
 .tools { font-size: 13px; color: var(--ink-2); }
 .tools strong { color: var(--ink); font-weight: 600; }
 .act.wide { width: 100%; justify-content: center; min-height: 40px; }
+.act.share { --ic: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1l3.5 3.5-1.4 1.4L9 4.8V10H7V4.8L5.9 5.9 4.5 4.5zM2 9h2v4h8V9h2v6H2z'/%3E%3C/svg%3E"); }
+.act.copied { border-color: var(--ok); color: var(--ok); }
 
 /* ===== Garagem: escolher o carro ===== */
 #garage { position: fixed; z-index: 50; width: min(380px, calc(100% - 16px)); max-height: calc(100% - 80px); overflow: auto; background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 2px 4px rgba(20, 26, 33, .08), 0 18px 48px rgba(20, 26, 33, .22); padding: 8px; }
@@ -338,6 +356,17 @@ button.mi:focus-visible { background: var(--panel-2); }
 .gcar strong { font-size: 14.5px; font-weight: 680; line-height: 1.25; align-self: end; }
 .gcar small { font-size: 12px; color: var(--ink-2); line-height: 1.3; align-self: start; }
 #garage .gnote { margin: 8px 8px 4px; font-size: 12px; color: var(--ink-2); }
+
+/* ===== Carregando: primeira abertura e montagem do carro na troca ===== */
+.boot { height: 100%; display: grid; place-content: center; justify-items: center; gap: 12px; color: var(--ink-2); font-size: 14px; }
+.boot p { margin: 0; }
+.spin { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--rule); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+#loader .spin { width: 16px; height: 16px; border-width: 2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loader { position: fixed; z-index: 60; translate: -50% -50%; pointer-events: none; display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px 9px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--rule); box-shadow: var(--shadow); font-size: 13.5px; font-weight: 600; color: var(--ink); transition: opacity 220ms var(--ease-out); }
+#loader.out { opacity: 0; }
+@starting-style { #loader { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
 
 /* ===== Troca de carro: a cena se apaga, o carro novo chega ===== */
 #c { transition: opacity 420ms var(--ease-out), filter 420ms var(--ease-out); }

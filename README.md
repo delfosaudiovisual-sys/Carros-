@@ -2,12 +2,16 @@
 
 Página única que mostra um carro em 3D, peça por peça: o que cada uma faz, onde fica, o código, como é presa,
 como desmontar e montar, os caminhos do ar, do combustível, da força e da faísca animados, sintomas e revisões.
-Dá para trocar de carro tocando no nome dele no topo.
+Dá para trocar de carro pelo botão **Trocar carro**, no topo. O endereço guarda o carro e a peça abertos
+(`#tiida-c11/corrente`), e cada peça tem **Copiar resumo** (no celular, **Enviar**) para mandar ao mecânico.
 
 Carros prontos:
 
 - **Peugeot 206 Sensation 1.4 flex** (`src/cars/peugeot-206*.js`)
 - **Honda Civic LX 1.7 2005, sétima geração, motor D17, manual de 5 marchas** (`src/cars/civic-g7*.js`)
+- **Nissan Tiida S 1.8 flex 2010/2011 (C11), motor MR18DE, manual de 6 marchas, hatch** (`src/cars/tiida-c11*.js`)
+
+A análise de UX e design, com o que foi corrigido e o que fica para a próxima rodada, está em [`docs/analise-ux.md`](docs/analise-ux.md).
 
 ## Como gerar a página
 
@@ -30,7 +34,7 @@ src/cars/<id>.js        dados do carro (window.CARS)
 src/cars/<id>.geo.js    geometria 3D (window.CAR_GEO[id]), quando separada
 src/cars/<id>.parts.js  lista de peças (window.CAR_PARTS[id]), quando separada
 src/cars/<id>.procN.js  código e procedimentos de desmontar/montar (window.CAR_PROC[id])
-tools/shot.mjs          abre a página num Chromium sem tela e tira capturas
+tools/shot.mjs          abre a página num Chromium sem tela e tira capturas (TOUCH=1 emula celular)
 ```
 
 ## Como adicionar o carro de um amigo
