@@ -10,6 +10,7 @@ Carros prontos:
 - **Peugeot 206 Sensation 1.4 flex** (`src/cars/peugeot-206*.js`)
 - **Honda Civic LX 1.7 2005, sétima geração, motor D17, manual de 5 marchas** (`src/cars/civic-g7*.js`)
 - **Nissan Tiida S 1.8 flex 2010/2011 (C11), motor MR18DE, manual de 6 marchas, hatch** (`src/cars/tiida-c11*.js`)
+- **VW Gol Power 1.6 8V flex 2010/2011 (G5), motor EA111, manual de 5 marchas, hatch 4 portas** (`src/cars/gol-g5*.js`)
 
 A análise de UX e design, com o que foi corrigido e o que fica para a próxima rodada, está em [`docs/analise-ux.md`](docs/analise-ux.md).
 
