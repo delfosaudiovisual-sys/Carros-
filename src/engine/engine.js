@@ -110,6 +110,18 @@ function add(id, geo, mat, p, r, parent) {
   if (r) m.rotation.set(r[0] || 0, r[1] || 0, r[2] || 0);
   return place(id, m, parent);
 }
+/* peça modelada em CAD (src/kit): o carro passa a posição, o giro (Euler XYZ), a escala e, se quiser, troca materiais */
+function kit(id, name, o) {
+  o = o || {};
+  const parts = window.kitGeometry ? window.kitGeometry(name) : null;
+  if (!parts) { console.warn('peça de CAD inexistente: ' + name); return []; }
+  const s = o.s == null ? null : (Array.isArray(o.s) ? o.s : [o.s, o.s, o.s]);
+  return parts.map(p => {
+    const m = add(id, p.geo, (o.mats && o.mats[p.m]) || MAT[p.m] || MAT.steel, o.at || [0, 0, 0], o.rot || null, o.parent);
+    if (s) m.scale.set(s[0], s[1], s[2]);
+    return m;
+  });
+}
 function pivotOf(id, p) {
   const g = new THREE.Group(); g.position.set(p[0], p[1], p[2]);
   reg(id).group.add(g); return g;
@@ -214,7 +226,25 @@ function gTube(pts, r, seg, closed, rad) {
 /* peças por atalho (posições em coordenadas do carro: x para frente, y para cima, z para a esquerda) */
 function box(id, c, s, mat, r, rot, parent) { return add(id, gBox(s[0], s[1], s[2], r), mat, c, rot, parent); }
 function cyl(id, c, rad, len, axis, mat, rot, parent, seg) { return add(id, gCyl(rad, rad, len, axis, seg), mat, c, rot, parent); }
-function tube(id, pts, r, mat, closed, parent, seg, rad) { (ROUTES[id] = ROUTES[id] || []).push(pts); return add(id, gTube(pts, r, seg || 0, closed, rad), mat, null, null, parent); }
+function tube(id, pts, r, mat, closed, parent, seg, rad) {
+  (ROUTES[id] = ROUTES[id] || []).push(pts);
+  const m = add(id, gTube(pts, r, seg || 0, closed, rad), mat, null, null, parent);
+  if (mat === MAT.hose && r >= 0.0075 && !closed && pts.length > 1) hoseClamps(id, pts, r, parent);
+  return m;
+}
+/* abraçadeira nas duas pontas de cada mangueira: cinta de aço e o caracol do parafuso */
+function hoseClamps(id, pts, r, parent) {
+  const c = curveOf(pts, false), L = c.getLength(); if (L < 0.04) return;
+  const zAx = V(0, 0, 1);
+  [0.014 / L, 1 - 0.014 / L].forEach(u => {
+    const p = c.getPointAt(u), t = c.getTangentAt(u), q = new THREE.Quaternion().setFromUnitVectors(zAx, t);
+    const band = add(id, gTorus(r + 0.0016, 0.0021, 'z', 6, 24), MAT.steel, [p.x, p.y, p.z], null, parent);
+    band.quaternion.copy(q); band.scale.set(1, 1, 2.3);
+    let n = V(0, 1, 0).cross(t); if (n.lengthSq() < 0.01) n = V(1, 0, 0).cross(t); n.normalize();
+    const h = add(id, gBox(0.007, 0.0065, 0.011, 0.0015), MAT.steel, [p.x + n.x * (r + 0.004), p.y + n.y * (r + 0.004), p.z + n.z * (r + 0.004)], null, parent);
+    h.quaternion.copy(q);
+  });
+}
 function rod(id, a, b, r, mat, parent, seg, r2) {
   const A = V(a[0], a[1], a[2]), B = V(b[0], b[1], b[2]); const d = B.clone().sub(A); const L = d.length();
   const m = new THREE.Mesh(new THREE.CylinderGeometry(r2 == null ? r : r2, r, L, seg || 12), mat);
@@ -1065,7 +1095,7 @@ function finishDetails() {
     mat.roughnessMap = t; if (bump) { mat.bumpMap = t; mat.bumpScale = bump; } mat.needsUpdate = true;
   };
   [MAT.alu, MAT.aluDark, MAT.cat, MAT.exhaust].forEach(m => grain(m, 'ruido', [1, 1]));
-  grain(MAT.iron, 'ruido', [1, 1], 0.05); grain(MAT.dash, 'ruido', [1, 1], 0.04); grain(MAT.carpet, 'fino', [6, 6], 0.2);
+  grain(MAT.iron, 'ruido', [1, 1]); grain(MAT.dash, 'ruido', [1, 1], 0.04); grain(MAT.carpet, 'fino', [6, 6], 0.2);
   MAT.fabric.bumpMap = texOf(64, 8, pleatDraw, [6, 1], false, 'gomos'); MAT.fabric.bumpScale = 1.2;
   MAT.fabricDS.bumpMap = texOf(64, 8, pleatDraw, [12, 1], false, 'gomos'); MAT.fabricDS.bumpScale = 1.2;
   MAT.disc.roughnessMap = texOf(256, 256, ringDraw, null, false, 'disco');
@@ -1130,7 +1160,7 @@ function initScene(canvas) {
   const ao = AO = new THREE.Mesh(new THREE.PlaneGeometry(carL * 1.2, carW * 1.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
   ao.rotation.x = -Math.PI / 2; ao.position.y = 0.002; scene.add(ao);
   carRoot = new THREE.Group(); scene.add(carRoot);  // montado com +z = lado do motorista; espelhado abaixo para ficar mão esquerda
-  const K = { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
+  const K = { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, kit, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
     gBox, gCyl, gLathe, gTorus, gTube, curveOf, setBar, mono, makeBody, art, ANIM, WHEELS, ROUTES, REG, lerp3 };
   GEO = (CAR.geometry || (window.CAR_GEO || {})[CAR.id])(K);
   GEO.build(); finishDetails(); buildFasteners();

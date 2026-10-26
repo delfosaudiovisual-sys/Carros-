@@ -3,7 +3,7 @@
    Hatch 4,295 × 1,695 × 1,535 m, entre-eixos 2,60 m, pneus 185/65 R15. Motor MR18DE transversal: corrente à direita (−z),
    câmbio à esquerda (+z), admissão virada para a frente e escape para o corta-fogo. */
 (window.CAR_GEO = window.CAR_GEO || {})['tiida-c11'] = function (K) {
-const { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
+const { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, kit, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
   gBox, gCyl, gLathe, gTorus, gTube, curveOf, setBar, mono, makeBody, art, ANIM, WHEELS, ROUTES, lerp3 } = K;
 const WB = 2.60, XFA = WB / 2, XRA = -WB / 2;      // eixos dianteiro e traseiro (x)
 const TRK = 0.74, WR = 0.311, WY = 0.305;          // bitola/2, raio do pneu 185/65 R15, altura do centro da roda
@@ -274,8 +274,7 @@ ANIM.crank = { x: EXc, y: EYc, r: CR, rod: RODL, pid: 'pistoes', rid: 'bielas' }
 
 function buildEngine() {
   /* bloco de alumínio, cárter em duas partes, cabeçote largo de duplo comando, tampa e bobinas */
-  box('bloco', [EXc, 0.465, ZB], [0.23, 0.33, 0.40], MAT.alu, 0.014);
-  for (const z of [-0.178, -0.088, 0.002]) box('bloco', [EXc + 0.118, 0.46, z], [0.01, 0.22, 0.016], MAT.alu);
+  kit('bloco', 'block_tiida');
   box('carter', [EXc, 0.272, ZB - 0.005], [0.225, 0.05, 0.39], MAT.aluDark, 0.01);
   box('carter', [EXc, 0.215, ZB - 0.01], [0.205, 0.07, 0.36], MAT.steelDark, 0.022);
   box('junta_cab', [EXc, 0.633, ZB], [0.236, 0.004, 0.396], MAT.steel);
@@ -360,7 +359,7 @@ function buildEngine() {
   rod('tensor_corr', [1.50, 0.52, ZT], [1.49, 0.55, ZT], 0.005, MAT.steel);
   plateFromHull('tampa_corr', CHAIN, 0.035, ZT - 0.037, 0.012, MAT.aluDark);
   /* correia de acessórios: virabrequim, compressor do ar, tensor automático, alternador e bomba d'água */
-  const ab = beltPath([[EXc, EYc, 0.072], [1.62, 0.31, 0.058], [1.665, 0.50, 0.03], [1.62, 0.68, 0.034], [1.47, 0.63, 0.047]]);
+  const ab = beltPath([[EXc, EYc, 0.072], [1.62, 0.31, 0.0565], [1.665, 0.50, 0.03], [1.62, 0.68, 0.031], [1.47, 0.63, 0.047]]);
   ribbon('correia_acess', ab, ZA, 0.018, MAT.belt);
   box('tensor_acess', [1.625, 0.48, ZA + 0.022], [0.08, 0.024, 0.016], MAT.steelDark, 0.006, [0, 0, 0.6]);
   add('tensor_acess', gCyl(0.03, 0.03, 0.022, 'z', 24), MAT.steel, [1.665, 0.50, ZA]);
@@ -377,7 +376,7 @@ function buildEngine() {
   /* lubrificação: bomba na ponta do virabrequim, pescador, filtro, vareta e respiro */
   box('bomba_oleo', [EXc, 0.39, -0.30], [0.13, 0.13, 0.026], MAT.aluDark, 0.01);
   tube('bomba_oleo', [[EXc - 0.02, 0.33, -0.28], [EXc - 0.03, 0.215, -0.22], [EXc - 0.02, 0.205, -0.14]], 0.008, MAT.steel);
-  add('filtro_oleo', gCyl(0.036, 0.036, 0.08, 'x', 28), MAT.blue, [1.555, 0.37, -0.04]);
+  kit('filtro_oleo', 'oil_filter', { at: [1.555, 0.37, -0.04], s: [0.94, 0.95, 0.95] });
   rod('vareta', [1.505, 0.30, 0.08], [1.55, 0.82, 0.085], 0.005, MAT.steel);
   add('vareta', gTorus(0.014, 0.004, 'x', 6, 18), MAT.yellow, [1.552, 0.835, 0.085]);
   rod('respiro', [EXc + 0.07, 0.80, 0.06], [1.62, 0.84, 0.10], 0.008, MAT.hose);
@@ -409,8 +408,8 @@ function buildIntake() {
   /* linha de combustível no cofre (sistema sem retorno: só uma linha de ida) */
   tube('linhas_comb', [[0.95, 0.215, -0.36], [1.05, 0.42, -0.42], [1.30, 0.62, -0.42], [1.48, 0.73, -0.33], [1.565, 0.728, -0.27]], 0.005, MAT.steel);
   /* partida a frio do flex: reservatório de gasolina, bombinha, eletroválvula e um tubinho para cada cilindro */
-  box('res_pf', [1.66, 0.72, -0.60], [0.07, 0.12, 0.07], MAT.whiteRes, 0.015);
-  add('res_pf', gCyl(0.019, 0.019, 0.025, 'y', 20), MAT.black, [1.66, 0.79, -0.60]);
+  kit('res_pf', 'reservoir', { at: [1.66, 0.72, -0.60], s: [0.07, 0.12, 0.07], mats: { tank: MAT.whiteRes } });
+  kit('res_pf', 'res_cap', { at: [1.66, 0.78, -0.60], s: 0.85, mats: { tankNeck: MAT.whiteRes } });
   add('bomba_pf', gCyl(0.017, 0.017, 0.05, 'y', 16), MAT.black, [1.66, 0.635, -0.60]);
   box('valv_pf', [1.70, 0.875, -0.33], [0.03, 0.025, 0.03], MAT.black, 0.004);
   tube('tubos_pf', [[1.66, 0.61, -0.60], [1.72, 0.66, -0.52], [1.745, 0.82, -0.40], [1.70, 0.875, -0.345]], 0.004, MAT.cable);
@@ -444,8 +443,8 @@ function buildIgnitionCooling() {
   });
   box('ventoinha', [1.90, 0.48, 0], [0.012, 0.30, 0.62], MAT.plastic);
   ANIM.fan = ANIM.fans[0];
-  box('vaso', [1.84, 0.62, -0.56], [0.09, 0.15, 0.10], MAT.coolantTank, 0.025);
-  add('vaso', gCyl(0.022, 0.022, 0.025, 'y', 24), MAT.black, [1.84, 0.705, -0.56]);
+  kit('vaso', 'reservoir', { at: [1.84, 0.62, -0.56], s: [0.09, 0.15, 0.10], mats: { tank: MAT.coolantTank } });
+  kit('vaso', 'res_cap', { at: [1.84, 0.695, -0.56], mats: { tankNeck: MAT.coolantTank } });
   tube('vaso', [[1.84, 0.70, -0.52], [1.90, 0.71, -0.40], [1.93, 0.69, -0.22]], 0.0045, MAT.hose);
   box('termostato', [1.505, 0.50, 0.115], [0.055, 0.06, 0.05], MAT.aluDark, 0.008);
   /* bomba d'água presa na tampa da corrente, com a polia no plano da correia de acessórios */
@@ -463,58 +462,49 @@ function buildExhaust() {
   CYLZ.forEach(z => tube('coletor_esc', [[1.27, 0.685, z], [1.235, 0.66, z * 0.8 - 0.02], [1.20, 0.585, -0.10]], 0.018, MAT.exhaust));
   box('protetor', [1.235, 0.70, ZB - 0.01], [0.05, 0.01, 0.34], MAT.aluDark, 0, [0, 0, 0.6]);
   box('protetor', [1.21, 0.60, ZB - 0.01], [0.008, 0.16, 0.34], MAT.aluDark);
-  add('catalisador', gCyl(0.06, 0.06, 0.15, 'y', 28), MAT.cat, [1.18, 0.45, -0.09]);
-  add('catalisador', gCyl(0.022, 0.06, 0.04, 'y', 28), MAT.cat, [1.18, 0.545, -0.09]);
-  add('catalisador', gCyl(0.06, 0.022, 0.04, 'y', 28), MAT.cat, [1.18, 0.355, -0.09]);
+  kit('catalisador', 'catalytic', { at: [1.18, 0.45, -0.09] });
   tube('tubo_diant', [[1.18, 0.335, -0.09], [1.16, 0.22, -0.06], [1.06, 0.19, -0.02], [0.60, 0.185, 0.0], [0.25, 0.19, 0.02]], 0.023, MAT.exhaust);
   for (let k = -4; k <= 4; k++) add('tubo_diant', gTorus(0.030, 0.003, 'x', 4, 20), MAT.steelDark, [0.92 + k * 0.012, 0.187, -0.006]);
   add('tubo_diant', gCyl(0.029, 0.029, 0.11, 'x', 20), MAT.steel, [0.92, 0.187, -0.006]);
   add('silenc_inter', gCyl(0.058, 0.058, 0.46, 'x', 28), MAT.exhaust, [-0.03, 0.195, 0.02]);
   /* o tubo traseiro passa por baixo da travessa do eixo e vai ao silencioso, do lado esquerdo */
   tube('tubo_tras', [[-0.27, 0.195, 0.02], [-0.55, 0.20, 0.06], [-1.0, 0.205, 0.20], [-1.30, 0.21, 0.32], [-1.58, 0.255, 0.44]], 0.022, MAT.exhaust);
-  const ms = add('silenc_tras', gCyl(0.07, 0.07, 0.34, 'x', 28), MAT.exhaust, [-1.77, 0.255, 0.46]); ms.scale.set(1, 1, 1.3);
+  kit('silenc_tras', 'muffler', { at: [-1.77, 0.255, 0.46] });
   tube('silenc_tras', [[-1.94, 0.255, 0.48], [-2.0, 0.25, 0.49], [-2.09, 0.25, 0.49]], 0.024, MAT.chrome);
   [[0.75, 0.20, -0.01], [-0.40, 0.21, 0.04], [-1.0, 0.215, 0.20], [-1.92, 0.30, 0.47], [-1.62, 0.30, 0.45]].forEach(p => box('coxins_esc', [p[0], p[1] + 0.04, p[2]], [0.03, 0.05, 0.02], MAT.rubber, 0.005));
 }
 
 function buildElectricTrans() {
-  box('bateria', [1.85, 0.60, 0.50], [0.18, 0.19, 0.22], MAT.batt, 0.008);
-  add('bateria', gCyl(0.011, 0.011, 0.02, 'y', 12), MAT.red, [1.81, 0.705, 0.41]);
-  add('bateria', gCyl(0.011, 0.011, 0.02, 'y', 12), MAT.black, [1.81, 0.705, 0.59]);
-  tube('cabos_bat', [[1.81, 0.715, 0.41], [1.76, 0.68, 0.30], [1.62, 0.62, 0.24], [1.45, 0.58, 0.24], [1.26, 0.47, 0.18]], 0.008, MAT.redCable);
-  tube('cabos_bat', [[1.81, 0.715, 0.59], [1.88, 0.66, 0.66], [1.86, 0.52, 0.70]], 0.008, MAT.cable);
+  kit('bateria', 'battery', { at: [1.85, 0.60, 0.50], s: [1.03, 1.0, 0.917] });
+  tube('cabos_bat', [[1.809, 0.705, 0.418], [1.76, 0.68, 0.30], [1.62, 0.62, 0.24], [1.45, 0.60, 0.27], [1.33, 0.60, 0.32], [1.27, 0.55, 0.30], [1.249, 0.52, 0.288]], 0.008, MAT.redCable);
+  tube('cabos_bat', [[1.809, 0.705, 0.582], [1.88, 0.66, 0.66], [1.86, 0.52, 0.70]], 0.008, MAT.cable);
   tube('cabos_bat', [[1.34, 0.50, 0.42], [1.38, 0.56, 0.52], [1.40, 0.60, 0.60]], 0.006, MAT.cable);
   box('caixa_fus_motor', [1.47, 0.70, 0.62], [0.12, 0.10, 0.12], MAT.black, 0.01);
   box('caixa_fus_painel', [0.56, 0.52, 0.62], [0.12, 0.12, 0.05], MAT.black, 0.008);
   box('bcm', [0.60, 0.62, 0.52], [0.12, 0.03, 0.15], MAT.box, 0.006);
-  add('alternador', gCyl(0.062, 0.062, 0.14, 'z', 32), MAT.alu, [1.62, 0.68, -0.30]);
-  for (const z of [-0.25, -0.28, -0.31, -0.34]) add('alternador', gTorus(0.062, 0.003, 'z', 4, 32), MAT.aluDark, [1.62, 0.68, z]);
-  add('alternador', gCyl(0.034, 0.034, 0.022, 'z', 24), MAT.steelDark, [1.62, 0.68, ZA]);
-  box('alternador', [1.58, 0.635, -0.24], [0.06, 0.03, 0.03], MAT.aluDark);
-  add('motor_partida', gCyl(0.045, 0.045, 0.17, 'z', 24), MAT.steelDark, [1.24, 0.46, 0.21]);
-  add('motor_partida', gCyl(0.025, 0.025, 0.10, 'z', 20), MAT.steel, [1.24, 0.515, 0.23]);
+  kit('alternador', 'alternator', { at: [1.62, 0.68, ZA - 0.011] });
+  kit('motor_partida', 'starter', { at: [1.24, 0.46, 0.235] });
   /* chicote: da cabine à central e ao motor; e da cabine até a bomba no tanque */
   tube('chicote', [[0.62, 0.62, 0.50], [0.90, 0.76, 0.55], [1.10, 0.87, 0.52], [1.45, 0.82, 0.60], [1.60, 0.82, 0.57], [1.55, 0.87, 0.30], [1.50, 0.875, 0.10], [1.48, 0.87, -0.25], [1.30, 0.89, -0.40]], 0.011, MAT.harness);
   tube('chicote', [[1.55, 0.74, 0.60], [1.20, 0.80, 0.63], [0.95, 0.72, 0.62], [0.58, 0.58, 0.62], [0.44, 0.26, 0.72], [-0.55, 0.26, 0.72], [-0.68, 0.36, 0.30], [-0.70, 0.345, -0.16]], 0.009, MAT.harness);
   add('buzina', gCyl(0.045, 0.045, 0.02, 'x', 24), MAT.black, [2.12, 0.44, 0.30]);
   add('limpador', gCyl(0.036, 0.036, 0.10, 'x', 20), MAT.black, [1.00, 0.95, -0.28]);
   rod('limpador', [0.97, 0.97, -0.46], [0.97, 0.97, 0.10], 0.005, MAT.steel);
-  box('lavador', [2.02, 0.44, -0.50], [0.10, 0.18, 0.12], MAT.whiteRes, 0.02);
+  kit('lavador', 'reservoir', { at: [2.02, 0.44, -0.50], s: [0.10, 0.18, 0.12], mats: { tank: MAT.whiteRes } });
   tube('lavador', [[2.02, 0.53, -0.52], [1.98, 0.70, -0.56], [1.95, 0.80, -0.58]], 0.012, MAT.whiteRes);
-  add('lavador', gCyl(0.018, 0.018, 0.02, 'y', 16), MAT.blue, [1.95, 0.815, -0.58]);
+  kit('lavador', 'res_cap', { at: [1.95, 0.805, -0.58], s: 0.8, mats: { black: MAT.blue, tankNeck: MAT.whiteRes } });
   tube('lavador', [[1.95, 0.42, -0.45], [1.40, 0.30, -0.66], [0.40, 0.24, -0.72], [-1.20, 0.30, -0.70], [-1.60, 1.30, -0.60], [-1.72, 1.44, -0.05]], 0.0028, MAT.cable);
   /* câmbio manual de 6 marchas (lado esquerdo) com embreagem hidráulica */
-  add('cambio', gLathe([[0.0, 0.0], [0.16, 0.0], [0.157, 0.03], [0.137, 0.13], [0.0, 0.13]], 'z', 40), MAT.alu, [EXc, EYc, 0.11]);
-  box('cambio', [1.34, 0.43, 0.33], [0.30, 0.28, 0.23], MAT.alu, 0.03);
-  box('cambio', [1.35, 0.43, 0.45], [0.24, 0.22, 0.02], MAT.aluDark, 0.01);
+  kit('cambio', 'gearbox_tiida');
   add('diferencial', gCyl(0.09, 0.09, 0.26, 'z', 32), MAT.alu, [1.29, 0.305, 0.20]);
   add('diferencial', gTorus(0.075, 0.01, 'z', 6, 36), MAT.steel, [1.29, 0.305, 0.13]);
   S.forEach(s => {
     const zi = s > 0 ? 0.33 : 0.07;
     const pts = s > 0 ? [[1.29, WY, zi], [1.30, WY, 0.48], [XFA, WY, s * 0.645]] : [[1.29, WY, zi], [1.30, WY, -0.18], [XFA, WY, s * 0.645]];
     tube('semieixos', pts, 0.013, MAT.steel);
-    add('semieixos', gCyl(0.018, 0.036, 0.07, 'z', 16), MAT.rubber, [XFA, WY, s * 0.605]);
-    add('semieixos', gCyl(0.036, 0.018, 0.07, 'z', 16), MAT.rubber, [1.295, WY, s > 0 ? 0.37 : 0.03]);
+    /* coifas sanfonadas: a boca grande fica na junta (na roda por fora, no câmbio por dentro) */
+    kit('semieixos', 'cv_boot', { at: [XFA, WY, s * 0.64], rot: s > 0 ? [0, Math.PI, 0] : null });
+    kit('semieixos', 'cv_boot', { at: [1.295, WY, (s > 0 ? 0.37 : 0.03) - s * 0.035], rot: s > 0 ? null : [0, Math.PI, 0] });
   });
   tube('cabos_cambio', [[1.30, 0.58, 0.31], [1.12, 0.62, 0.24], [0.98, 0.42, 0.10], [0.60, 0.25, 0.03], [0.25, 0.30, 0.0]], 0.0045, MAT.cable);
   tube('cabos_cambio', [[1.32, 0.58, 0.35], [1.14, 0.63, 0.27], [0.99, 0.43, 0.12], [0.60, 0.255, 0.05], [0.25, 0.31, 0.02]], 0.0045, MAT.cable);
@@ -529,16 +519,14 @@ function buildElectricTrans() {
 
 /* ===== Ar-condicionado: compressor, condensador, filtro secador, válvula de expansão, evaporador e tubulações ===== */
 function buildAC() {
-  add('compressor', gCyl(0.062, 0.062, 0.17, 'z', 28), MAT.alu, [1.62, 0.31, -0.27]);
-  add('compressor', gCyl(0.058, 0.058, 0.025, 'z', 28), MAT.steelDark, [1.62, 0.31, ZA]);
-  box('compressor', [1.62, 0.37, -0.22], [0.05, 0.03, 0.04], MAT.aluDark, 0.004);
+  kit('compressor', 'compressor', { at: [1.62, 0.31, ZA - 0.012] });
   box('condensador', [1.968, 0.48, -0.01], [0.016, 0.30, 0.60], MAT.alu);
   for (let k = -9; k <= 9; k++) box('condensador', [1.978, 0.48, k * 0.031 - 0.01], [0.002, 0.29, 0.003], MAT.aluDark);
   add('filtro_secador', gCyl(0.03, 0.03, 0.20, 'y', 20), MAT.alu, [1.955, 0.47, -0.355]);
   box('pressostato', [1.88, 0.565, -0.39], [0.025, 0.03, 0.025], MAT.black, 0.004);
-  tube('tubos_ac', [[1.635, 0.375, -0.21], [1.75, 0.42, -0.25], [1.86, 0.56, -0.30], [1.968, 0.61, -0.30]], 0.008, MAT.acPipe);
+  tube('tubos_ac', [[1.634, 0.40, -0.245], [1.75, 0.42, -0.25], [1.86, 0.56, -0.30], [1.968, 0.61, -0.30]], 0.008, MAT.acPipe);
   tube('tubos_ac', [[1.955, 0.38, -0.355], [1.85, 0.48, -0.42], [1.60, 0.60, -0.48], [1.25, 0.74, -0.45], [1.02, 0.72, -0.36]], 0.006, MAT.acPipe);
-  tube('tubos_ac', [[1.02, 0.70, -0.30], [1.20, 0.72, -0.40], [1.42, 0.62, -0.43], [1.58, 0.42, -0.33], [1.61, 0.375, -0.25]], 0.011, MAT.acPipe);
+  tube('tubos_ac', [[1.02, 0.70, -0.30], [1.20, 0.72, -0.40], [1.42, 0.62, -0.43], [1.58, 0.44, -0.30], [1.607, 0.40, -0.245]], 0.011, MAT.acPipe);
   box('valv_exp', [1.005, 0.71, -0.33], [0.025, 0.05, 0.05], MAT.aluDark, 0.004);
   box('evaporador', [0.80, 0.66, -0.30], [0.06, 0.18, 0.22], MAT.alu);
   for (let k = -3; k <= 3; k++) box('evaporador', [0.832, 0.66, -0.30 + k * 0.03], [0.002, 0.17, 0.004], MAT.aluDark);
@@ -620,14 +608,14 @@ function buildSuspensionBrakes() {
     box('barra_estab', [XFA - 0.26, 0.27, s * 0.30], [0.04, 0.035, 0.04], MAT.rubber, 0.008);
     box('subchassi', [1.38, 0.215, s * 0.42], [0.66, 0.05, 0.065], MAT.steelDark, 0.01);
     /* freio dianteiro: disco ventilado, pinça flutuante e sensor do ABS na manga */
-    add('discos', gCyl(0.13, 0.13, 0.022, 'z', 48), MAT.disc, [XFA, WY, s * 0.695], null, WF.spin);
-    add('discos', gCyl(0.07, 0.07, 0.03, 'z', 32), MAT.disc, [XFA, WY, s * 0.72], null, WF.spin);
+    kit('discos', 'disc_v', { at: [XFA, WY, s * 0.695], rot: s > 0 ? null : [0, Math.PI, 0], parent: WF.spin });
     add('sens_roda', gTorus(0.075, 0.004, 'z', 4, 40), MAT.steelDark, [XFA, WY, s * 0.675], null, WF.spin);
-    const ang = Math.atan2(0.05, -0.10), cx = XFA + Math.cos(ang) * 0.112, cy = WY + Math.sin(ang) * 0.112;
-    box('pincas', [cx, cy, s * 0.695], [0.058, 0.105, 0.066], MAT.caliper, 0.012, [0, 0, ang + Math.PI / 2], WF.yaw);
-    add('pincas', gCyl(0.026, 0.026, 0.02, 'z', 16), MAT.steel, [cx, cy, s * 0.663], null, WF.yaw);
-    for (const dz of [-0.014, 0.014]) box('pastilhas', [cx, cy, s * 0.695 + dz], [0.044, 0.078, 0.009], MAT.pad, 0.004, [0, 0, ang + Math.PI / 2], WF.yaw);
-    tube('tubos_freio', [[cx, cy + 0.04, s * 0.675], [XFA - 0.03, 0.48, s * 0.625], [XFA - 0.02, 0.58, s * 0.585]], 0.005, MAT.rubber);
+    /* pinça: peça de CAD desenhada em +x e girada para trás e para cima; do lado direito ela é espelhada (pistão para dentro) */
+    const ang = Math.atan2(0.05, -0.10), rotC = s > 0 ? [0, 0, ang] : [0, Math.PI, Math.PI - ang];
+    const rp = (r, t, z) => [XFA + Math.cos(ang) * r - Math.sin(ang) * t, WY + Math.sin(ang) * r + Math.cos(ang) * t, s * z];
+    kit('pincas', 'caliper', { at: [XFA, WY, s * 0.695], rot: rotC, parent: WF.yaw });
+    kit('pastilhas', 'pads_v', { at: [XFA, WY, s * 0.695], rot: rotC, parent: WF.yaw });
+    tube('tubos_freio', [rp(0.14, -0.02 * s, 0.657), [XFA - 0.03, 0.48, s * 0.625], [XFA - 0.02, 0.58, s * 0.585]], 0.005, MAT.rubber);
     add('sens_roda', gCyl(0.009, 0.009, 0.04, 'y', 12), MAT.black, [XFA + 0.07, WY + 0.07, s * 0.67], null, WF.yaw);
     tube('sens_roda', [[XFA + 0.07, WY + 0.095, s * 0.67], [XFA + 0.02, 0.50, s * 0.63], [XFA + 0.01, 0.62, s * 0.59]], 0.0025, MAT.cable);
     /* ---- traseira: eixo de torção (dois braços e uma travessa), molas e amortecedores separados ---- */
@@ -660,10 +648,10 @@ function buildSuspensionBrakes() {
   box('subchassi', [1.70, 0.215, 0], [0.05, 0.05, 0.90], MAT.steelDark, 0.01);
   box('subchassi', [1.06, 0.215, 0], [0.06, 0.05, 0.90], MAT.steelDark, 0.01);
   /* hidráulica: servo, cilindro-mestre, ABS e as linhas (ABS → frente esquerda, frente direita, traseira, ramais; mestre → ABS) */
-  add('servo', gCyl(0.115, 0.115, 0.12, 'x', 40), MAT.black, [1.06, 0.70, 0.42]);
+  kit('servo', 'booster', { at: [1.06, 0.70, 0.42], rot: [0, Math.PI / 2, 0] });
   add('cil_mestre', gCyl(0.025, 0.025, 0.13, 'x', 20), MAT.alu, [1.19, 0.71, 0.42]);
-  box('reserv_freio', [1.19, 0.775, 0.42], [0.06, 0.07, 0.09], MAT.fluid, 0.012);
-  add('reserv_freio', gCyl(0.02, 0.02, 0.02, 'y', 16), MAT.black, [1.19, 0.82, 0.42]);
+  kit('reserv_freio', 'reservoir', { at: [1.19, 0.775, 0.42], s: [0.06, 0.07, 0.09], mats: { tank: MAT.fluid } });
+  kit('reserv_freio', 'res_cap', { at: [1.19, 0.81, 0.42], s: 0.9, mats: { tankNeck: MAT.fluid } });
   box('abs', [1.22, 0.58, 0.52], [0.10, 0.09, 0.10], MAT.aluDark, 0.01);
   add('abs', gCyl(0.03, 0.03, 0.06, 'x', 20), MAT.black, [1.30, 0.58, 0.52]);
   box('abs', [1.165, 0.58, 0.52], [0.012, 0.08, 0.09], MAT.black, 0.004);
@@ -823,20 +811,20 @@ function fxPositions() {
       A('fx_tampa_corr', [p[0] + dx / L * 0.022, p[1] + dy / L * 0.022, ZT - 0.043], nz, 0.008);
     }
   }
-  A('fx_alternador', [1.58, 0.635, -0.225], pz, 0.011); A('fx_alternador', [1.65, 0.73, -0.225], pz, 0.011);
-  [[1.24, 0.51, 0.12], [1.24, 0.41, 0.12]].forEach(p => A('fx_partida', p, pz, 0.012));
+  A('fx_alternador', [1.572, 0.632, ZA + 0.105], pz, 0.011); A('fx_alternador', [1.668, 0.728, ZA + 0.103], pz, 0.011);
+  [[1.24, 0.51, 0.162], [1.24, 0.41, 0.162]].forEach(p => A('fx_partida', p, pz, 0.012));
   [[1.40, 0.845, -0.50], [1.40, 0.845, -0.54], [1.36, 0.82, -0.60]].forEach(p => A('fx_coxins', p, up, 0.013));
   [[1.36, 0.655, 0.42], [1.36, 0.665, 0.52], [1.36, 0.665, 0.60]].forEach(p => A('fx_coxins', p, up, 0.013));
   A('fx_coxins', [1.06, 0.30, 0.10], up, 0.013);
   for (let k = 0; k < 7; k++) { const a = -0.3 + k * 0.9; A('fx_cambio', [EXc + 0.165 * Math.cos(a), EYc + 0.165 * Math.sin(a), 0.115], pz, 0.012); }
   A('fx_bujoes_cambio', [1.32, 0.29, 0.35], dn, 0.014); A('fx_bujoes_cambio', [1.49, 0.40, 0.35], px, 0.014);
   for (let k = 0; k < 6; k++) { const a = k * TAU / 6; A('fx_plato', [EXc + 0.108 * Math.cos(a), EYc + 0.108 * Math.sin(a), 0.168], pz, 0.008); A('fx_volante', [EXc + 0.03 * Math.cos(a), EYc + 0.03 * Math.sin(a), 0.14], pz, 0.009); }
-  [[1.59, 0.335, -0.18], [1.65, 0.335, -0.18], [1.62, 0.25, -0.18]].forEach(p => A('fx_compressor', p, pz, 0.01));
+  [[1.62, 0.376, -0.229], [1.62, 0.244, -0.229], [1.62, 0.376, -0.317]].forEach(p => A('fx_compressor', p, pz, 0.01));
   [[1.17, 0.53, 0.47], [1.27, 0.53, 0.47], [1.22, 0.53, 0.57]].forEach(p => A('fx_abs', p, up, 0.009));
   S.forEach((s, si) => {
-    const ang = Math.atan2(0.05, -0.10), cx = XFA + Math.cos(ang) * 0.112, cy = WY + Math.sin(ang) * 0.112, tx = -Math.sin(ang), ty = Math.cos(ang);
+    const ang = Math.atan2(0.05, -0.10), rp = (r, t, z) => [XFA + Math.cos(ang) * r - Math.sin(ang) * t, WY + Math.sin(ang) * r + Math.cos(ang) * t, s * z];
     const yw = 'y' + si, wh = 'w' + si;
-    for (const k of [-1, 1]) { A('fx_pinca', [cx + tx * 0.058 * k, cy + ty * 0.058 * k, s * 0.665], [0, 0, -s], 0.011, yw); A('fx_pinca', [cx + tx * 0.075 * k - 0.02, cy + ty * 0.075 * k, s * 0.65], [0, 0, -s], 0.013, yw); }
+    for (const k of [-1, 1]) { A('fx_pinca', rp(0.094, 0.06 * k, 0.639), [0, 0, -s], 0.011, yw); A('fx_pinca', rp(0.112, 0.06 * k, 0.664), [0, 0, -s], 0.012, yw); }
     A('fx_sens_roda', [XFA + 0.07, WY + 0.098, s * 0.67], up, 0.007, yw);
     for (let k = 0; k < 3; k++) { const a = k * TAU / 3 + 0.5; A('fx_amort_d', [XFA + 0.03 + 0.05 * Math.cos(a), 0.892, s * 0.56 + 0.05 * Math.sin(a)], up, 0.011); }
     A('fx_amort_d', [XFA + 0.04, 0.41, s * 0.64], px, 0.012); A('fx_amort_d', [XFA + 0.04, 0.45, s * 0.64], px, 0.012);

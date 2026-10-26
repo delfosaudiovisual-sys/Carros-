@@ -28,6 +28,25 @@ As texturas são desenhadas no navegador, sem arquivos: banda de rodagem e flanc
 placas Mercosul com um código de cada carro (campo `plate` em `src/cars/<id>.js`), marcas de usinagem nos discos, variação
 de brilho no metal fundido e gomos nos estofados. Ficam em `finishDetails()`, no motor, e valem para todos os carros.
 
+## Peças em CAD
+
+As peças com forma mais característica são modeladas em CAD (CadQuery) em `tools/kit/parts.py`, com as medidas e os
+detalhes do tipo de peça: alternador com polia de 6 canais, aletas e orelhas de fixação; motor de partida com pinhão,
+solenoide e bornes; compressor do ar com embreagem; disco ventilado (ou sólido) com chapéu e furos; pinça com ponte,
+dedos, pinos-guia e sangrador; pastilhas em arco; bateria com tampa, bujões e polos; filtro de óleo com estrias;
+reservatórios soprados e tampas; catalisador com protetor de calor; silencioso oval; servo-freio; coifas sanfonadas;
+e, gerados nas medidas de cada carro, o bloco (cilindros marcados, nervuras, base do filtro) e o câmbio (capa da
+embreagem, nervuras, encaixe do motor de partida). Cada carro só posiciona, gira e escala a peça com `kit()`.
+
+```sh
+pip install cadquery                 # uma vez
+python tools/kit/build.py            # gera src/kit/kit.data.js (todas as peças)
+python tools/kit/build.py caliper    # refaz só as peças citadas e mantém as outras
+```
+
+As malhas vão quantizadas em 16 bits e comprimidas com gzip dentro da página (cerca de 280 KB); o navegador
+descomprime ao abrir. As mangueiras de borracha ganham abraçadeiras nas duas pontas automaticamente.
+
 ## Como gerar a página
 
 ```sh
@@ -49,6 +68,10 @@ src/cars/<id>.js        dados do carro (window.CARS)
 src/cars/<id>.geo.js    geometria 3D (window.CAR_GEO[id]), quando separada
 src/cars/<id>.parts.js  lista de peças (window.CAR_PARTS[id]), quando separada
 src/cars/<id>.procN.js  código e procedimentos de desmontar/montar (window.CAR_PROC[id])
+src/kit/kit.js          descompressão das peças em CAD (window.kitGeometry)
+src/kit/kit.data.js     malhas das peças em CAD (gerado por tools/kit/build.py)
+tools/kit/parts.py      modelos em CAD (CadQuery) das peças
+tools/kit/build.py      gera kit.data.js a partir dos modelos
 tools/shot.mjs          abre a página num Chromium sem tela e tira capturas (TOUCH=1 emula celular)
 ```
 

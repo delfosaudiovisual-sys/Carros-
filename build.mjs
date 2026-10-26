@@ -7,7 +7,8 @@ import vm from 'node:vm';
 
 const R = p => fs.readFileSync(new URL(p, import.meta.url), 'utf8');
 const cars = fs.readdirSync(new URL('./src/cars/', import.meta.url)).filter(f => f.endsWith('.js')).sort();
-const files = [...cars.map(f => 'src/cars/' + f), 'src/engine/engine.js', 'src/app.js'];
+const kits = fs.existsSync(new URL('./src/kit/', import.meta.url)) ? fs.readdirSync(new URL('./src/kit/', import.meta.url)).filter(f => f.endsWith('.js')).sort() : [];
+const files = [...kits.map(f => 'src/kit/' + f), ...cars.map(f => 'src/cars/' + f), 'src/engine/engine.js', 'src/app.js'];
 
 const parts = files.map(f => {
   const code = R('./' + f);

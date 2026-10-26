@@ -90,5 +90,6 @@
     if (id && id !== curId) switchTo(id); else if (id && pid && cur && cur.api) cur.api.select(pid);
   });
 
-  mount(fromHash() || (byId(store.get(KEY)) ? store.get(KEY) : CARS[0].id), false, fromHash() ? hashParts()[1] : null);
+  /* as peças em CAD são descomprimidas antes da primeira montagem (leva uma fração de segundo) */
+  (window.CAR_KIT_READY || Promise.resolve()).then(() => mount(fromHash() || (byId(store.get(KEY)) ? store.get(KEY) : CARS[0].id), false, fromHash() ? hashParts()[1] : null));
 })();
