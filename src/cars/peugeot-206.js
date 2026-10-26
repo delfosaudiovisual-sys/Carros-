@@ -1,6 +1,6 @@
 /* ===== Peugeot 206 Sensation 1.4 flex 2007 (2 portas, sem ar, sem airbag, direção mecânica) ===== */
 (window.CARS = window.CARS || []).push({
-  id: 'peugeot-206', order: 1, storeKey: 'p206', codePrefix: '206',
+  id: 'peugeot-206', order: 1, storeKey: 'p206', codePrefix: '206', plate: 'PGT2A06',
   badge: '1.4', name: 'Peugeot 206', short: '206', title: 'Peugeot 206 Sensation', sub: '1.4 flex 2007, 2 portas, sem ar, sem airbag, direção mecânica',
   kmDefault: 180355, size: [3.835, 1.652], wheelR: 0.2915,
   profile: { top: [[-1.87, .55], [-1.80, .615], [-1.66, .86], [-1.35, 1.23], [-1.10, 1.39], [-0.6, 1.43], [-0.2, 1.43], [0.23, 1.40], [0.5, 1.21], [0.82, 1.00], [1.2, .93], [1.5, .87], [1.80, .79], [1.90, .71], [1.945, .61]],
@@ -1713,6 +1713,7 @@ function buildBody() {
     const q = surf(x, s * (sRow(x, J.SB) + sRow(x, J.R058)) / 2), c = [q.p[0] + q.n[0] * 0.004, q.p[1] + q.n[1] * 0.004, q.p[2] + q.n[2] * 0.004];
     const d = add('farois', new THREE.SphereGeometry(rr, 20, 10, 0, TAU, 0, Math.PI / 2), MAT.steelDark, c);
     d.quaternion.setFromUnitVectors(V(0, -1, 0), V(q.n[0], q.n[1], q.n[2])); d.scale.set(1, 0.45, 1);
+    const bz = add('farois', gTorus(rr * 1.03, 0.0022, 'y', 6, 32), MAT.chromeTrim || MAT.chrome, c); bz.quaternion.copy(d.quaternion);   // aro cromado do refletor
     sph('farois', [c[0] + q.n[0] * 0.004, c[1] + q.n[1] * 0.004, c[2] + q.n[2] * 0.004], rr * 0.28, MAT.bulb);
   }));
   panel('grade', [RF(1.83, 1.925, r(J.T3))], MAT.grille, { off: 0.004, fl: 0.004, flMat: MAT.grille });
@@ -1729,6 +1730,7 @@ function buildBody() {
   panel('borrachas', [RS(XBP, XDF, rowFn(J.SB, -0.005), rowFn(J.SB, 0.007))], MAT.rubber, { off: 0.003, fl: 0.003, flMat: MAT.rubber, parent: dp });
   panel('frisos', [RS(XB + 0.02, XA - 0.03, rowFn(J.R048, -0.017), rowFn(J.R048, 0.017))], MAT.trim, { off: 0.004, fl: 0.004, flMat: MAT.trim, parent: dp });
   panel('fech_portas', [RS(-0.385, -0.255, rowFn(J.R084, -0.022), rowFn(J.R084, 0.022))], MAT.trim, { off: 0.003, fl: 0.003, flMat: MAT.trim, parent: dp });
+  S.forEach(s => loop('fech_portas', edgePath(-0.37, -0.27, x => s * sRow(x, J.R084), 10), 0.0075, MAT.black, 0.011, dp(s)));   // maçaneta preta sobre o rebaixo
 
   /* laterais, soleiras, teto, colunas e vidros fixos (soldados ou colados) */
   panel('soleiras', [RS(XB, XA, r(J.R032), r(J.S0), 'TR')], MAT.paint, { shadow: true, fl: 0.045 });

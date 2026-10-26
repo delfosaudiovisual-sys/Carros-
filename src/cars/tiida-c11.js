@@ -1,6 +1,6 @@
 /* ===== Nissan Tiida 1.8 S Flex 2010/2011 (C11), hatch 5 portas, manual de 6 marchas, motor MR18DE ===== */
 (window.CARS = window.CARS || []).push({
-  id: 'tiida-c11', order: 3, storeKey: 'tiida-c11', codePrefix: 'TDA',
+  id: 'tiida-c11', order: 3, storeKey: 'tiida-c11', codePrefix: 'TDA', plate: 'TDA1C11',
   badge: '1.8', name: 'Nissan Tiida', short: 'Tiida', title: 'Nissan Tiida S', sub: '1.8 16V flex 2010/2011, manual de 6 marchas, hatch, motor MR18DE',
   kmDefault: 0, size: [4.295, 1.695], wheelR: 0.311,
   paint: { color: 0x7d1820, roughness: 0.32, metalness: 0.45, clearcoat: 1, clearcoatRoughness: 0.12 },

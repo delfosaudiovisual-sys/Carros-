@@ -83,6 +83,7 @@ function buildBody() {
     const q = surf(x, s * sv), c = [q.p[0] + q.n[0] * 0.002, q.p[1] + q.n[1] * 0.002, q.p[2] + q.n[2] * 0.002];
     const d = add('farois', new THREE.SphereGeometry(rr, 24, 10, 0, TAU, 0, Math.PI / 2), MAT.reflector, c);
     d.quaternion.setFromUnitVectors(V(0, -1, 0), V(q.n[0], q.n[1], q.n[2])); d.scale.set(1, 0.4, 1);
+    const bz = add('farois', gTorus(rr * 1.03, 0.0022, 'y', 6, 32), MAT.chromeTrim || MAT.chrome, c); bz.quaternion.copy(d.quaternion);   // aro cromado do refletor
     sph('farois', [c[0] + q.n[0] * 0.003, c[1] + q.n[1] * 0.003, c[2] + q.n[2] * 0.003], rr * 0.26, MAT.bulb);
   }));
   /* grade entre os faróis: friso cromado em cima, lâminas e o emblema H no centro */
@@ -108,6 +109,7 @@ function buildBody() {
   panel('borrachas', [RS(XBP, XDF, rowFn(J.SB, -0.005), rowFn(J.SB, 0.007))], MAT.rubber, { off: 0.003, fl: 0.003, flMat: MAT.rubber, parent: dp });
   panel('frisos', [RS(XB + 0.03, XA - 0.04, rowFn(J.R048, -0.016), rowFn(J.R048, 0.016))], MAT.trim, { off: 0.004, fl: 0.004, flMat: MAT.trim, parent: dp });
   panel('fech_portas', [RS(0.02, 0.15, rowFn(J.R084, -0.022), rowFn(J.R084, 0.022))], MAT.trim, { off: 0.003, fl: 0.003, flMat: MAT.trim, parent: dp });
+  S.forEach(s => loop('fech_portas', edgePath(0.035, 0.135, x => s * sRow(x, J.R084), 10), 0.0075, MAT.paint, 0.011, dp(s)));   // maçaneta na cor do carro, sobre o rebaixo
   /* portas traseiras */
   panel('portas_tras', [RS(XD2, XB, r(J.SB), r(J.R032), 'LRBt')], MAT.paint, { shadow: true, parent: rdp, fl: 0.045 });
   panel('portas_tras', [RS(XD2, XB, r(J.UE), UEp, 'LRTb')], MAT.paint, { shadow: true, parent: rdp, fl: 0.035 });
@@ -118,6 +120,7 @@ function buildBody() {
   panel('borrachas', [RS(XRG, XB - 0.05, rowFn(J.SB, -0.005), rowFn(J.SB, 0.007))], MAT.rubber, { off: 0.003, fl: 0.003, flMat: MAT.rubber, parent: rdp });
   panel('frisos', [RS(XD2 + 0.03, XB - 0.03, rowFn(J.R048, -0.016), rowFn(J.R048, 0.016))], MAT.trim, { off: 0.004, fl: 0.004, flMat: MAT.trim, parent: rdp });
   panel('fech_portas', [RS(-0.72, -0.59, rowFn(J.R084, -0.022), rowFn(J.R084, 0.022))], MAT.trim, { off: 0.003, fl: 0.003, flMat: MAT.trim, parent: rdp });
+  S.forEach(s => loop('fech_portas', edgePath(-0.705, -0.605, x => s * sRow(x, J.R084), 10), 0.0075, MAT.paint, 0.011, rdp(s)));
 
   /* laterais, soleiras, teto, colunas e vidros fixos (soldados ou colados) */
   panel('soleiras', [RS(XD2, XA, r(J.R032), r(J.S0), 'TR')], MAT.paint, { shadow: true, fl: 0.045 });

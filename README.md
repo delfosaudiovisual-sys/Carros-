@@ -13,6 +13,20 @@ Carros prontos:
 
 A análise de UX e design, com o que foi corrigido e o que fica para a próxima rodada, está em [`docs/analise-ux.md`](docs/analise-ux.md).
 
+## Como navegar
+
+- **Arrastar** gira, **rodinha ou pinça** aproxima, **clique ou toque** numa peça abre o painel dela.
+- **Setas ou W A S D** andam com a câmera para a frente, para trás e para os lados; **Q e E** descem e sobem; **Shift** vai mais rápido.
+- No canto do palco há **setas na tela** (segure para andar; o centro volta à vista inicial). Dá para escondê-las em **Vistas → Setas na tela**.
+- Num caminho ou guia aberto, **vírgula e ponto** (ou PgUp e PgDn) mudam o passo e **espaço** reproduz ou pausa.
+- **/** vai para a busca; **Esc** fecha o que estiver aberto.
+
+## Acabamento dos modelos
+
+As texturas são desenhadas no navegador, sem arquivos: banda de rodagem e flanco dos pneus, grades em colmeia vazadas,
+placas Mercosul com um código de cada carro (campo `plate` em `src/cars/<id>.js`), marcas de usinagem nos discos, variação
+de brilho no metal fundido e gomos nos estofados. Ficam em `finishDetails()`, no motor, e valem para todos os carros.
+
 ## Como gerar a página
 
 ```sh

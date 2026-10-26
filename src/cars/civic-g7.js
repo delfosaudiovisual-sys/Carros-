@@ -1,6 +1,6 @@
 /* ===== Honda Civic LX 1.7 16V 2005 (sétima geração), manual de 5 marchas, motor D17 ===== */
 (window.CARS = window.CARS || []).push({
-  id: 'civic-g7', order: 2, storeKey: 'civic-g7', codePrefix: 'CVC',
+  id: 'civic-g7', order: 2, storeKey: 'civic-g7', codePrefix: 'CVC', plate: 'CVC7D17',
   badge: '1.7', name: 'Honda Civic', short: 'Civic', title: 'Honda Civic LX', sub: '1.7 16V 2005, manual de 5 marchas, sedã, motor D17',
   kmDefault: 0, size: [4.455, 1.715], wheelR: 0.311,
   paint: { color: 0xa9aeb3, roughness: 0.3, metalness: 0.6, clearcoat: 1, clearcoatRoughness: 0.12 },

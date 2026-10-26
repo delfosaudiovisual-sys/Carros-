@@ -27,7 +27,17 @@ function appHTML(CAR, opts) {
       <button class="tbtn mbtn" data-menu="vistas" aria-haspopup="true" aria-expanded="false">Vistas</button>
       <button class="tbtn mbtn more" data-menu="mais" aria-haspopup="true" aria-expanded="false">Mais</button>
     </div>
-    <div id="hint" hidden>${tap} numa peça para ver o que ela faz</div>
+    <div id="hint" hidden>${tap} numa peça para ver o que ela faz${tap === 'Clique' ? ' · setas para andar' : ''}</div>
+    <div id="navpad" role="group" aria-label="Andar com a câmera">
+      <div class="np-vert"><button data-nav="u" aria-label="Subir"><i class="ic i-up"></i></button><button data-nav="d" aria-label="Descer"><i class="ic i-down"></i></button></div>
+      <div class="np-cross">
+        <button data-nav="f" class="np-f" aria-label="Para a frente"><i class="ic i-fwd"></i></button>
+        <button data-nav="l" class="np-l" aria-label="Para a esquerda"><i class="ic i-left"></i></button>
+        <button data-nav="home" class="np-c" aria-label="Voltar à vista inicial"><i class="ic i-home"></i></button>
+        <button data-nav="r" class="np-r" aria-label="Para a direita"><i class="ic i-right"></i></button>
+        <button data-nav="b" class="np-b" aria-label="Para trás"><i class="ic i-back"></i></button>
+      </div>
+    </div>
   </main>
   <div id="panel">
     <button id="grab" aria-label="Expandir painel"></button>
@@ -339,17 +349,17 @@ const GP = [], GN = [];
   }
 })();
 function capGeo(front, j0, j1, zLim, off) {
-  const i = front ? NS - 1 : 0, dir = front ? 1 : -1, bul = front ? 0.022 : 0.014, K = 18, pos = [], idx = [];
+  const i = front ? NS - 1 : 0, dir = front ? 1 : -1, bul = front ? 0.022 : 0.014, K = 18, pos = [], uv = [], idx = [];
   const rows = []; for (let j = j0; j <= j1; j++) rows.push(j);
   rows.forEach(j => {
     const p = GP[i][j], zj = Math.max(1e-4, p[2]), zl = Math.min(zj, zLim || zj);
-    for (let k = 0; k <= K; k++) { const z = zl * (1 - 2 * k / K); pos.push(p[0] + dir * (bul * (1 - Math.pow(z / zj, 2)) + (off || 0)), p[1], z); }
+    for (let k = 0; k <= K; k++) { const z = zl * (1 - 2 * k / K); pos.push(p[0] + dir * (bul * (1 - Math.pow(z / zj, 2)) + (off || 0)), p[1], z); uv.push(z, p[1]); }
   });
   for (let r = 0; r < rows.length - 1; r++) for (let k = 0; k < K; k++) {
     const a = r * (K + 1) + k, b = a + 1, c = a + K + 1, d = c + 1;
     if (front) idx.push(a, b, c, b, d, c); else idx.push(a, c, b, b, c, d);
   }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
   return g;
 }
 
@@ -414,12 +424,13 @@ function rectGeo(r, sign, off) {
   });
   let span = 0; for (const [a, b] of lim) span = Math.max(span, b - a);
   const ns = Math.max(4, Math.ceil(span / (r.res || 0.02))), nc = xs.length, W = ns + 1;
-  const pos = new Float32Array(nc * W * 3), nor = new Float32Array(nc * W * 3);
+  const pos = new Float32Array(nc * W * 3), nor = new Float32Array(nc * W * 3), uv = new Float32Array(nc * W * 2);   // uv em metros: texturas com tamanho real
   for (let a = 0; a < nc; a++) {
     const [s0, s1] = lim[a];
     for (let k = 0; k < W; k++) {
-      const q = surf(xs[a], (s0 + (s1 - s0) * k / ns) * sign), o = (a * W + k) * 3;
+      const sv = (s0 + (s1 - s0) * k / ns) * sign, q = surf(xs[a], sv), o = (a * W + k) * 3;
       for (let c = 0; c < 3; c++) { pos[o + c] = q.p[c] + q.n[c] * off; nor[o + c] = q.n[c]; }
+      uv[(a * W + k) * 2] = xs[a]; uv[(a * W + k) * 2 + 1] = sv;
     }
   }
   const idx = [];
@@ -437,7 +448,7 @@ function rectGeo(r, sign, off) {
   }
   const col = a => { const L = []; for (let k = 0; k < W; k++) L.push(a * W + k); return L; };
   const row = k => { const L = []; for (let a = 0; a < nc; a++) L.push(a * W + k); return L; };
-  return { pos, nor, idx, E: { L: col(0), R: col(nc - 1), T: row(0), B: row(ns) } };
+  return { pos, nor, uv, idx, E: { L: col(0), R: col(nc - 1), T: row(0), B: row(ns) } };
 }
 function flangeGeo(R, r, depth) {
   if (!depth) return null;
@@ -469,16 +480,17 @@ function flangeGeo(R, r, depth) {
 const BATCH = new Map();
 function bpush(id, mat, parent, side, shadow, G) {
   const key = id + '|' + mat.uuid + '|' + (parent ? parent.uuid : '-') + '|' + side;
-  let b = BATCH.get(key); if (!b) BATCH.set(key, b = { id, mat, parent, shadow: false, pos: [], nor: [], idx: [] });
+  let b = BATCH.get(key); if (!b) BATCH.set(key, b = { id, mat, parent, shadow: false, pos: [], nor: [], uv: [], idx: [] });
   const base = b.pos.length / 3;
   for (let i = 0; i < G.pos.length; i++) { b.pos.push(G.pos[i]); b.nor.push(G.nor[i]); }
+  for (let i = 0, n = G.pos.length / 3 * 2; i < n; i++) b.uv.push(G.uv ? G.uv[i] : 0);
   for (let i = 0; i < G.idx.length; i++) b.idx.push(G.idx[i] + base);
   b.shadow = b.shadow || !!shadow;
 }
 function flushPanels() {
   BATCH.forEach(b => {
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(b.nor, 3)); g.setIndex(b.idx);
+    g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(b.nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2)); g.setIndex(b.idx);
     add(b.id, g, b.mat, null, null, b.parent).castShadow = b.shadow;
   });
   BATCH.clear();
@@ -811,16 +823,17 @@ function mergeStatic() {
     }
     buckets.forEach(b => {
       if (b.list.length < 2) { keep.push(b.list[0]); return; }
-      const pos = [], nor = [], idx = []; let base = 0;
+      const pos = [], nor = [], uvs = [], idx = []; let base = 0;
       b.list.forEach(m => {
         m.updateMatrix(); const g = m.geometry.clone().applyMatrix4(m.matrix);
-        const P = g.attributes.position.array, N = g.attributes.normal ? g.attributes.normal.array : null;
+        const P = g.attributes.position.array, N = g.attributes.normal ? g.attributes.normal.array : null, U = g.attributes.uv ? g.attributes.uv.array : null;
         for (let i = 0; i < P.length; i++) { pos.push(P[i]); nor.push(N ? N[i] : 0); }
+        for (let i = 0, n = P.length / 3 * 2; i < n; i++) uvs.push(U ? U[i] : 0);
         if (g.index) { const I = g.index.array; for (let i = 0; i < I.length; i++) idx.push(I[i] + base); }
         else for (let i = 0; i < P.length / 3; i++) idx.push(base + i);
         base += P.length / 3; b.par.remove(m); g.dispose();
       });
-      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2)); g.setIndex(idx);
       const mm = new THREE.Mesh(g, b.mat); mm.castShadow = b.shadow; b.par.add(mm);
       mm.userData.pid = id; mm.userData.baseMat = b.mat; keep.push(mm);
     });
@@ -963,6 +976,129 @@ function drawRelLines() {
   relLines = new THREE.LineSegments(g, new THREE.LineDashedMaterial({ vertexColors: true, dashSize: 0.03, gapSize: 0.02, depthTest: false, transparent: true, opacity: 0.9 }));
   relLines.computeLineDistances(); relLines.renderOrder = 10; scene.add(relLines);
 }
+/* ===== Acabamento: texturas desenhadas no próprio navegador (sem arquivos), aplicadas depois da geometria =====
+   valem para todos os carros: pneus, grades, placas, discos, metal fundido, estofados e tapetes */
+const TEXCV = window.__carTexCanvas = window.__carTexCanvas || {};   // desenhos guardados entre um carro e outro: só a primeira montagem paga
+function texOf(w, h, draw, rep, color, key) {
+  let cv = key && TEXCV[key];
+  if (!cv) { cv = document.createElement('canvas'); cv.width = w; cv.height = h; draw(cv.getContext('2d'), w, h); if (key) TEXCV[key] = cv; }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  if (rep) t.repeat.set(rep[0], rep[1]); if (color) t.encoding = THREE.sRGBEncoding;
+  return t;
+}
+const rnd = (() => { let a = 1234567; return () => { a = (a * 1103515245 + 12345) & 0x7fffffff; return a / 0x7fffffff; }; })();
+function noiseDraw(cell, lo, hi) {                    // ruído de valor suave e repetível nas bordas, em tons de cinza entre lo e hi
+  return (cx, w, h) => {
+    const nx = Math.max(1, Math.round(w / cell)), ny = Math.max(1, Math.round(h / cell)), G = Array.from({ length: ny }, () => Array.from({ length: nx }, rnd));
+    const img = cx.createImageData(w, h), sm = f => f * f * (3 - 2 * f);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const gx = x / w * nx, gy = y / h * ny, i = Math.floor(gx), j = Math.floor(gy), sx = sm(gx - i), sy = sm(gy - j);
+      const r0 = G[j % ny], r1 = G[(j + 1) % ny], v = (r0[i % nx] * (1 - sx) + r0[(i + 1) % nx] * sx) * (1 - sy) + (r1[i % nx] * (1 - sx) + r1[(i + 1) % nx] * sx) * sy;
+      const g = Math.round(255 * (lo + (hi - lo) * (v * 0.7 + rnd() * 0.3))), o = (y * w + x) * 4;
+      img.data[o] = img.data[o + 1] = img.data[o + 2] = g; img.data[o + 3] = 255;
+    }
+    cx.putImageData(img, 0, 0);
+  };
+}
+/* pneu: banda de rodagem com sulcos e blocos, ombros e flanco com frisos e a "escrita" da medida (alto = claro) */
+function tireDraw(v0, v1) {
+  return (cx, w, h) => {
+    const Y = v => (1 - v) * h, tw = v1 - v0;
+    cx.fillStyle = '#7a7a7a'; cx.fillRect(0, 0, w, h);
+    cx.fillStyle = '#9a9a9a'; cx.fillRect(0, Y(v1 + tw * 0.3), w, Y(v0 - tw * 0.3) - Y(v1 + tw * 0.3));         // ombros
+    cx.fillStyle = '#d8d8d8'; cx.fillRect(0, Y(v1), w, Y(v0) - Y(v1));                                         // banda
+    cx.fillStyle = '#1c1c1c';
+    [0.2, 0.5, 0.8].forEach(f => { const y = Y(v0 + tw * f); cx.fillRect(0, y - h * tw * 0.045, w, h * tw * 0.09); });   // sulcos em volta
+    const N = 72, bw = w / N; cx.strokeStyle = '#1c1c1c';
+    for (let k = 0; k < N; k++) {                     // sulcos transversais, alternados de cada lado
+      const x = k * bw;
+      cx.beginPath(); cx.lineWidth = Math.max(2, bw * 0.16);
+      cx.moveTo(x, Y(v1 + tw * 0.35)); cx.lineTo(x + bw * 0.45, Y(v0 + tw * 0.62)); cx.stroke();
+      cx.moveTo(x + bw * 0.5, Y(v0 + tw * 0.38)); cx.lineTo(x + bw * 0.95, Y(v0 - tw * 0.35)); cx.stroke();
+      cx.lineWidth = Math.max(1, bw * 0.06); cx.beginPath(); cx.moveTo(x + bw * 0.25, Y(v0 + tw * 0.56)); cx.lineTo(x + bw * 0.25, Y(v0 + tw * 0.44)); cx.stroke();
+    }
+    cx.strokeStyle = '#1c1c1c';
+    [[0.06, v0 - tw * 0.35], [v1 + tw * 0.35, 0.94]].forEach(([a, b]) => {        // os dois flancos: frisos e blocos de letras
+      for (let k = 1; k <= 3; k++) { const y = Y(a + (b - a) * (0.18 + k * 0.05)); cx.fillStyle = '#8c8c8c'; cx.fillRect(0, y, w, Math.max(1, h * 0.004)); }
+      const yl = Y(a + (b - a) * 0.55), lh = Math.max(3, (Y(a) - Y(b)) * 0.12);
+      for (let rep = 0; rep < 2; rep++) {
+        let x = rep * w / 2 + w * 0.04;
+        for (let c = 0; c < 26; c++) { const cw = (c % 7 === 6 ? 0.5 : 0.8 + rnd() * 0.5) * lh * 0.62; if (c % 7 !== 6) { cx.fillStyle = '#b4b4b4'; cx.fillRect(x, yl - lh / 2, cw, lh); } x += cw + lh * 0.18; }
+      }
+    });
+  };
+}
+function hexDraw(cx, w, h) {                          // grade em colmeia: branco = material, preto = furo
+  cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h);
+  const cols = 4, r = w / cols / Math.sqrt(3), rows = Math.round(h / (r * 1.5));
+  cx.fillStyle = '#000';
+  for (let j = -1; j <= rows + 1; j++) for (let i = -1; i <= cols + 1; i++) {
+    const x = (i + (j % 2 ? 0.5 : 0)) * (w / cols), y = j * h / rows, rr = r * 0.78;
+    cx.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + k * Math.PI / 3; cx.lineTo(x + rr * Math.cos(a), y + rr * Math.sin(a)); } cx.closePath(); cx.fill();
+  }
+}
+function plateDraw(code) {                            // placa no padrão Mercosul (genérica, com um código do próprio app)
+  return (cx, w, h) => {
+    cx.fillStyle = '#f4f5f2'; cx.fillRect(0, 0, w, h);
+    cx.fillStyle = '#1f4aa8'; cx.fillRect(0, 0, w, h * 0.2);
+    cx.fillStyle = '#fff'; cx.font = `700 ${Math.round(h * 0.13)}px Arial, Helvetica, sans-serif`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('BRASIL', w / 2, h * 0.105);
+    cx.fillStyle = '#2f9e4d'; cx.fillRect(w * 0.9, h * 0.04, w * 0.07, h * 0.12); cx.fillStyle = '#f2c21b'; cx.beginPath(); cx.moveTo(w * 0.935, h * 0.05); cx.lineTo(w * 0.965, h * 0.1); cx.lineTo(w * 0.935, h * 0.15); cx.lineTo(w * 0.905, h * 0.1); cx.fill();
+    cx.strokeStyle = '#fff'; cx.lineWidth = h * 0.012; cx.beginPath(); cx.arc(w * 0.06, h * 0.1, h * 0.055, 0, TAU); cx.stroke();
+    cx.fillStyle = '#16181b'; cx.font = `700 ${Math.round(h * 0.62)}px "Arial Narrow", Arial, Helvetica, sans-serif`; cx.fillText(code, w / 2, h * 0.6, w * 0.9);
+    cx.strokeStyle = '#16181b'; cx.lineWidth = h * 0.03; cx.strokeRect(h * 0.015, h * 0.015, w - h * 0.03, h - h * 0.03);
+  };
+}
+function ringDraw(cx, w, h) {                         // disco de freio: marcas de usinagem em círculos
+  cx.fillStyle = '#888'; cx.fillRect(0, 0, w, h);
+  for (let r = 4; r < w / 2; r += 3) { const g = 150 + Math.round(rnd() * 60); cx.strokeStyle = `rgb(${g},${g},${g})`; cx.lineWidth = 1; cx.beginPath(); cx.arc(w / 2, h / 2, r, 0, TAU); cx.stroke(); }
+}
+function pleatDraw(cx, w, h) {                        // gomos do estofado: costura funda e o tecido estufado entre elas
+  for (let x = 0; x < w; x++) { const t = x / w, g = Math.round(70 + 150 * Math.pow(Math.sin(Math.PI * t), 0.6)); cx.fillStyle = `rgb(${g},${g},${g})`; cx.fillRect(x, 0, 1, h); }
+}
+function finishDetails() {
+  const bySlot = {};
+  const swap = (ids, from, to) => ids.forEach(id => (REG[id] ? REG[id].meshes : []).forEach(m => { if (m.material === from) { m.material = to; m.userData.baseMat = to; } }));
+  /* metal fundido, escapamento, discos, tecidos, tapetes e painel ganham grão (afeta só a luz, não a cor) */
+  /* relevo fino demais vira chiado na tela: no metal fica só a variação de brilho; o relevo é largo e fraco */
+  const grain = (mat, key, rep, bump) => {
+    const t = key === 'fino' ? texOf(128, 128, noiseDraw(2, 0.55, 1), rep, false, 'ruido-fino') : texOf(128, 128, noiseDraw(12, 0.72, 1), rep, false, 'ruido');
+    mat.roughnessMap = t; if (bump) { mat.bumpMap = t; mat.bumpScale = bump; } mat.needsUpdate = true;
+  };
+  [MAT.alu, MAT.aluDark, MAT.cat, MAT.exhaust].forEach(m => grain(m, 'ruido', [1, 1]));
+  grain(MAT.iron, 'ruido', [1, 1], 0.05); grain(MAT.dash, 'ruido', [1, 1], 0.04); grain(MAT.carpet, 'fino', [6, 6], 0.2);
+  MAT.fabric.bumpMap = texOf(64, 8, pleatDraw, [6, 1], false, 'gomos'); MAT.fabric.bumpScale = 1.2;
+  MAT.fabricDS.bumpMap = texOf(64, 8, pleatDraw, [12, 1], false, 'gomos'); MAT.fabricDS.bumpScale = 1.2;
+  MAT.disc.roughnessMap = texOf(256, 256, ringDraw, null, false, 'disco');
+  [MAT.fabric, MAT.fabricDS, MAT.disc].forEach(m => { m.needsUpdate = true; });
+  /* pneus: a banda de rodagem fica onde o perfil do pneu é mais largo */
+  ['pneus', 'estepe'].forEach(id => (REG[id] ? REG[id].meshes : []).forEach(m => {
+    const P = m.geometry.parameters && m.geometry.parameters.points; if (m.material !== MAT.tire || !P) return;
+    const rmax = Math.max(...P.map(p => p.x)), on = P.map(p => p.x > rmax - 0.003), a = on.indexOf(true), b = on.lastIndexOf(true), n = P.length - 1;
+    const key = 'tire' + a + '_' + b + '_' + n;
+    if (!bySlot[key]) { const t = texOf(1024, 256, tireDraw(a / n, b / n), null, false, key); const mt = MAT.tire.clone(); mt.bumpMap = t; mt.bumpScale = 1.6; mt.roughness = 0.95; MAT[key] = bySlot[key] = mt; }
+    m.material = m.userData.baseMat = bySlot[key];
+  }));
+  /* grades vazadas: dá para ver o radiador atrás */
+  MAT.grilleMesh = MAT.grille.clone(); Object.assign(MAT.grilleMesh, { alphaMap: texOf(128, 222, hexDraw, [21, 12], false, 'colmeia'), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.55 });
+  MAT.grilleMesh.bumpMap = MAT.grilleMesh.alphaMap; MAT.grilleMesh.bumpScale = 0.6;
+  swap(['grade', 'grade_inf'], MAT.grille, MAT.grilleMesh);
+  /* placas Mercosul: um adesivo plano sobre cada placa, com a placa do carro */
+  const code = CAR.plate || ((CAR.codePrefix || 'CAR').slice(0, 3) + '1A23');
+  MAT.plateDecal = new THREE.MeshStandardMaterial({ map: texOf(520, 169, plateDraw(code), null, true, 'placa-' + code), roughness: 0.45, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  ['para_choque_d', 'para_choque_t', 'tampa_tras', 'tampa_mala', 'painel_tras'].forEach(id => (REG[id] ? REG[id].meshes.slice() : []).forEach(m => {
+    if (m.material !== MAT.plate) return;
+    const g = m.geometry; g.computeBoundingBox(); const bb = g.boundingBox, c = bb.getCenter(V(0, 0, 0)), sz = bb.getSize(V(0, 0, 0)), par = m.parent;
+    c.add(m.position); if (par && par.userData.abs) c.add(par.userData.absPos || par.position);
+    let n = V(0, 0, 0); const N = g.attributes.normal; if (N) { for (let i = 0; i < N.count; i++) n.x += N.getX(i), n.y += N.getY(i), n.z += N.getZ(i); n.divideScalar(N.count); }
+    const isBox = g.type.includes('Box');            // placa feita de caixa fina: o adesivo vai na face de fora
+    if (isBox || n.length() < 0.5) n.set(Math.sign(c.x) || 1, 0, 0); else n.normalize();
+    const d = new THREE.Mesh(new THREE.PlaneGeometry(sz.z * 0.97, sz.z * 0.97 * 0.325), MAT.plateDecal);
+    const up = V(0, 1, 0).addScaledVector(n, -n.y).normalize(), xa = up.clone().cross(n);
+    d.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xa, up, n)); d.scale.x = -1;   // o carro é espelhado em z: desespelha o texto
+    d.position.copy(c).addScaledVector(n, (isBox ? sz.x / 2 : 0) + 0.0012);
+    d.userData.noMerge = true; place(id, d, par);
+  }));
+}
 /* ---------- inicialização da cena ---------- */
 function initScene(canvas) {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -997,7 +1133,7 @@ function initScene(canvas) {
   const K = { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
     gBox, gCyl, gLathe, gTorus, gTube, curveOf, setBar, mono, makeBody, art, ANIM, WHEELS, ROUTES, REG, lerp3 };
   GEO = (CAR.geometry || (window.CAR_GEO || {})[CAR.id])(K);
-  GEO.build(); buildFasteners();
+  GEO.build(); finishDetails(); buildFasteners();
   for (const id in REG) REG[id].meshes.forEach(m => { if (!m.isInstancedMesh) m.castShadow = m.castShadow || id === 'pneus' || (PARTS[id] && PARTS[id].s === 'carro' && m.userData.baseMat === MAT.paint); });
   refreshThemeColors();
   carRoot.scale.z = -1; carRoot.updateMatrixWorld(true); mergeStatic(); setupExplode(); updateEngine(0); applyStates(); updateHinges();
@@ -1738,7 +1874,7 @@ return (function () {
     const nParts = Object.keys(PARTS).length, nFix = Object.values(FIX).reduce((a, f) => a + (typeof f.q === 'number' ? f.q : 0), 0);
     return `<section class="welcome" aria-labelledby="wtitle"><button class="close" data-act="welcome-off" aria-label="Fechar as boas-vindas">×</button>
       <h2 id="wtitle">Por dentro do seu carro</h2>
-      <p>Arraste para girar e use ${TAP === 'Clique' ? 'a rodinha' : 'a pinça'} para aproximar. ${TAP} numa peça para ver o que ela faz, o código dela, como é presa e como sai e volta.</p>
+      <p>Arraste para girar e use ${TAP === 'Clique' ? 'a rodinha para aproximar e as setas do teclado para andar' : 'a pinça para aproximar; as setas na tela andam com a câmera'}. ${TAP} numa peça para ver o que ela faz, o código dela, como é presa e como sai e volta.</p>
       <p class="count"><strong>${nParts}</strong> peças e conjuntos e <strong>${nFix}</strong> fixadores mapeados.</p>
       <p class="wlabel">Comece por</p>
       <div class="chips">${(CAR.welcome || []).filter(id => REG[id]).map(chip).join('')}</div>
@@ -1812,7 +1948,7 @@ return (function () {
       </div>
       <ol class="steps">${fl.steps.map((s, i) => `<li class="${i === APP.flowStep ? 'on' : ''}" style="--c:${flowColor[i]}"><button data-step="${i}"><strong>${esc(stepTitle(fl, i))}</strong><span>${esc(s[1])}</span></button></li>`).join('')}</ol>
       ${isDm ? '<p class="fine">Sequência típica para esse tipo de carro. Confira no manual de reparação antes de desmontar e use as ferramentas certas.</p>' : ''}
-      <p class="fine keys">Teclado: ← e → mudam o passo; espaço reproduz ou pausa.</p>`;
+      <p class="fine keys">Teclado: vírgula e ponto (ou PgUp e PgDn) mudam o passo; espaço reproduz ou pausa; as setas andam com a câmera.</p>`;
     syncPlayer();
     const on = $('.steps li.on', tabbody); if (on) on.scrollIntoView({ block: 'nearest' });
   }
@@ -1996,20 +2132,21 @@ return (function () {
   /* ---------- barra: vista + menus Abrir, Mostrar e Vistas ---------- */
   const syncView = () => $$('#viewseg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === APP.view));
   $('#viewseg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (APP.intro) endIntro(); APP.view = b.dataset.v; DM.prevView = null; syncView(); applyStates(); });
-  const TOGS = { hood: 'Capô aberto', doors: 'Portas e tampa abertas', bolts: 'Encaixes', color: 'Cores por sistema', run: 'Motor girando' };
+  const TOGS = { hood: 'Capô aberto', doors: 'Portas e tampa abertas', bolts: 'Encaixes', color: 'Cores por sistema', run: 'Motor girando', pad: 'Setas na tela' };
   const doorArts = () => ARTS.filter(a => a.kind !== 'hood');
-  const isOn = k => k === 'hood' ? !!(artOf('hood') || {}).t : k === 'doors' ? doorArts().some(a => a.t) : k === 'bolts' ? !!APP.bolts : k === 'color' ? !!APP.color : !!APP.run;
+  const isOn = k => k === 'hood' ? !!(artOf('hood') || {}).t : k === 'doors' ? doorArts().some(a => a.t) : k === 'bolts' ? !!APP.bolts : k === 'color' ? !!APP.color : k === 'pad' ? !$('#navpad').hidden : !!APP.run;
   function setTog(k, on) {
     if (k === 'hood' || k === 'doors') (k === 'hood' ? ARTS.filter(a => a.kind === 'hood') : doorArts()).forEach(a => { a.t = on ? 1 : 0; if (DM.g) DM.was[ARTS.indexOf(a)] = a.t; });
     else if (k === 'bolts') { APP.bolts = on; applyStates(); }
     else if (k === 'color') { APP.color = on; applyStates(); }
     else if (k === 'run') APP.run = on;
+    else if (k === 'pad') showPad(on);
     syncMenus();
   }
   const tg = k => `<button class="mi" role="menuitemcheckbox" aria-checked="${isOn(k)}" data-tog="${k}"><span>${TOGS[k]}</span><i class="sw2" aria-hidden="true"></i></button>`;
   const secAbrir = () => `<p class="mh">Abrir</p>${tg('hood')}${tg('doors')}`;
   const secMostrar = () => `<p class="mh">Mostrar</p>${tg('bolts')}${tg('color')}${tg('run')}<label class="mi rg"><span>Explodir</span><input type="range" min="0" max="1" step="0.01" value="${APP.explode}" data-explode aria-label="Explodir as peças"></label><p class="mnote">Com uma peça ou um sistema escolhido, só eles se separam.</p>`;
-  const secVistas = () => `<p class="mh">Vistas</p><div class="vgrid">${[['inicial', 'Inicial'], ['frente', 'Frente'], ['traseira', 'Traseira'], ['lado', 'Lado'], ['cima', 'De cima'], ['baixo', 'Por baixo']].map(([k, t]) => `<button class="vb" data-view="${k}">${t}</button>`).join('')}</div>`;
+  const secVistas = () => `<p class="mh">Vistas</p><div class="vgrid">${[['inicial', 'Inicial'], ['frente', 'Frente'], ['traseira', 'Traseira'], ['lado', 'Lado'], ['cima', 'De cima'], ['baixo', 'Por baixo']].map(([k, t]) => `<button class="vb" data-view="${k}">${t}</button>`).join('')}</div>${tg('pad')}<p class="mnote">${TAP === 'Clique' ? 'Setas ou W A S D andam; Q e E descem e sobem; Shift vai mais rápido.' : 'Segure uma seta para andar; o centro volta à vista inicial.'}</p>`;
   let menuBtn = null;
   function openMenu(btn) {
     const name = btn.dataset.menu;
@@ -2105,17 +2242,72 @@ return (function () {
     if (APP.flow && APP.follow) { APP.follow = false; syncPlayer(); }
   });
 
+  /* ---------- andar com a câmera: setas (ou W A S D) para frente, trás e lados; Q e E descem e sobem; Shift corre ----------
+     a câmera e o ponto de giro andam juntos, com arranque e freio suaves */
+  const NAVK = { ArrowUp: 'f', KeyW: 'f', ArrowDown: 'b', KeyS: 'b', ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', KeyE: 'u', KeyQ: 'd' };
+  const NAV = { keys: new Set(), vel: V(0, 0, 0), fast: false };
+  const navBlocked = t => t && t.closest && t.closest('#tabs, #menu, #garage, #qres, [role="tablist"], [role="listbox"], input, select, textarea');
+  function navPress(k, fast) {
+    if (!NAV.keys.size) { tween = null; atHome = false; tip.hidden = true; hideHint(); closeMenu(); if (APP.flow && APP.follow) { APP.follow = false; syncPlayer(); } }
+    NAV.keys.add(k); NAV.fast = !!fast; syncPad();
+  }
+  function navRelease(k) { if (k) NAV.keys.delete(k); else NAV.keys.clear(); syncPad(); }
+  const _f = V(0, 0, 0), _r = V(0, 0, 0), _w = V(0, 0, 0);
+  function navStep(dt) {
+    _w.set(0, 0, 0);
+    if (NAV.keys.size) {
+      camera.getWorldDirection(_f); _r.setFromMatrixColumn(camera.matrixWorld, 0); _r.y = 0; if (_r.lengthSq() < 1e-6) _r.set(1, 0, 0); _r.normalize();
+      const K = NAV.keys;
+      if (K.has('f')) _w.add(_f); if (K.has('b')) _w.sub(_f); if (K.has('r')) _w.add(_r); if (K.has('l')) _w.sub(_r); if (K.has('u')) _w.y += 1; if (K.has('d')) _w.y -= 1;
+      if (_w.lengthSq() > 1e-6) {
+        const d = camera.position.distanceTo(controls.target);
+        _w.normalize().multiplyScalar(Math.min(3.2, Math.max(0.45, d * 0.8)) * (NAV.fast ? 2.4 : 1));
+      }
+    }
+    NAV.vel.lerp(_w, reduceMotion ? 1 : 1 - Math.exp(-dt * (NAV.keys.size ? 9 : 6)));
+    if (NAV.vel.lengthSq() < 1e-5 && !NAV.keys.size) { NAV.vel.set(0, 0, 0); return false; }
+    const step = NAV.vel.clone().multiplyScalar(dt), p = camera.position.clone().add(step);
+    p.y = Math.min(7, Math.max(-0.9, p.y));
+    const rr = Math.hypot(p.x, p.z); if (rr > 12) { p.x *= 12 / rr; p.z *= 12 / rr; }
+    step.subVectors(p, camera.position); camera.position.add(step); controls.target.add(step);
+    return true;
+  }
   /* ---------- teclado ---------- */
   document.addEventListener('keydown', e => {
     const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
     if (e.key === 'Escape') { if (!menu.hidden) { closeMenu(); return; } if (typing) return; if (APP.focus || APP.flow || APP.symptom) clearSelection(); return; }
     if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); q.focus(); q.select(); return; }
-    if (typing || !APP.flow || e.altKey || e.ctrlKey || e.metaKey) return;
-    const n = APP.flow.steps.length;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); gotoStep(Math.min(n - 1, APP.flowStep + 1), true); }
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); gotoStep(Math.max(0, APP.flowStep - 1), true); }
-    else if ((e.key === ' ' || e.key === 'Spacebar') && !(t && t.tagName === 'BUTTON')) { e.preventDefault(); togglePlay(); }
+    if (typing || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (APP.flow) {
+      const n = APP.flow.steps.length;
+      if (e.key === '.' || e.key === 'PageDown') { e.preventDefault(); gotoStep(Math.min(n - 1, APP.flowStep + 1), true); return; }
+      if (e.key === ',' || e.key === 'PageUp') { e.preventDefault(); gotoStep(Math.max(0, APP.flowStep - 1), true); return; }
+      if ((e.key === ' ' || e.key === 'Spacebar') && !(t && t.tagName === 'BUTTON')) { e.preventDefault(); togglePlay(); return; }
+    }
+    const k = NAVK[e.code]; if (!k || e.defaultPrevented || navBlocked(t)) return;
+    e.preventDefault(); navPress(k, e.shiftKey);
+  }, sig);
+  document.addEventListener('keyup', e => { const k = NAVK[e.code]; if (k) navRelease(k); if (e.key === 'Shift') NAV.fast = false; }, sig);
+  window.addEventListener('blur', () => navRelease(), sig);
+  /* setas na tela: segurar anda; o centro volta à vista inicial */
+  const pad = $('#navpad'), PADKEY = 'carros-setas-tela';
+  function syncPad() { $$('[data-nav]', pad).forEach(b => b.classList.toggle('on', NAV.keys.has(b.dataset.nav))); }
+  function showPad(on) { pad.hidden = !on; store.set(PADKEY, on ? '1' : '0'); }
+  pad.hidden = store.get(PADKEY) === '0';
+  pad.addEventListener('pointerdown', e => {
+    const b = e.target.closest('[data-nav]'); if (!b) return;
+    e.preventDefault(); if (b.dataset.nav === 'home') { atHome = false; NAV.vel.set(0, 0, 0); homeView(); return; }
+    try { b.setPointerCapture(e.pointerId); } catch (err) { }
+    navPress(b.dataset.nav, false);
   });
+  const padUp = e => { const b = e.target.closest && e.target.closest('[data-nav]'); if (b && b.dataset.nav !== 'home') navRelease(b.dataset.nav); };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => pad.addEventListener(ev, padUp));
+  pad.addEventListener('click', e => {               // teclado ou leitor de tela: cada clique dá um passinho
+    const b = e.target.closest('[data-nav]'); if (!b || e.detail !== 0) return;
+    if (b.dataset.nav === 'home') return homeView();
+    const k = b.dataset.nav; navPress(k, false); setTimeout(() => navRelease(k), 280);
+  });
+  pad.addEventListener('contextmenu', e => e.preventDefault());
 
   /* ---------- dica e abertura ---------- */
   const hint = $('#hint');
@@ -2135,7 +2327,7 @@ return (function () {
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return;
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-    toolbar.classList.toggle('narrow', w < 560);
+    toolbar.classList.toggle('narrow', w < 560); $('#stage').classList.toggle('narrow', w < 680);
     TOP_SAFE = toolbar.offsetTop + toolbar.offsetHeight;
     marks.forEach(m => { m.w = m.h = 0; });
   }
@@ -2162,6 +2354,7 @@ return (function () {
       controls.target.lerpVectors(tween.a.t, tween.b.t, e); camera.position.lerpVectors(tween.a.p, tween.b.p, e);
       if (k >= 1) tween = null;
     }
+    if (navStep(dt)) { atHome = false; }
     controls.update();
     let moved = false;
     for (const a of ARTS) {
@@ -2227,7 +2420,7 @@ return (function () {
     scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(m => mats.add(m)); });
     [MATS.hl, MATS.rel, MATS.hover].forEach(b => b.forEach(m => mats.add(m))); Object.values(MATS.sys).forEach(m => mats.add(m));
     Object.values(MAT).forEach(m => mats.add(m)); [MATS.ghostBody, MATS.ghostDim, MATS.ghostFaint].forEach(m => m && mats.add(m));
-    mats.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+    mats.forEach(m => { ['map', 'bumpMap', 'alphaMap', 'roughnessMap', 'normalMap', 'emissiveMap'].forEach(k => { if (m[k]) m[k].dispose(); }); m.dispose(); });
     if (scene.environment) scene.environment.dispose();
     controls.dispose(); renderer.dispose(); renderer.forceContextLoss();
     host.innerHTML = '';
