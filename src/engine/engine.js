@@ -1163,10 +1163,10 @@ function finishDetails() {
   ['para_choque_d', 'para_choque_t', 'tampa_tras', 'tampa_mala', 'painel_tras'].forEach(id => (REG[id] ? REG[id].meshes.slice() : []).forEach(m => {
     if (m.material !== MAT.plate) return;
     const g = m.geometry; g.computeBoundingBox(); const bb = g.boundingBox, c = bb.getCenter(V(0, 0, 0)), sz = bb.getSize(V(0, 0, 0)), par = m.parent;
-    c.add(m.position); if (par && par.userData.abs) c.add(par.userData.absPos || par.position);
+    c.applyQuaternion(m.quaternion).add(m.position); if (par && par.userData.abs) c.add(par.userData.absPos || par.position);
     let n = V(0, 0, 0); const N = g.attributes.normal; if (N) { for (let i = 0; i < N.count; i++) n.x += N.getX(i), n.y += N.getY(i), n.z += N.getZ(i); n.divideScalar(N.count); }
     const isBox = g.type.includes('Box');            // placa feita de caixa fina: o adesivo vai na face de fora
-    if (isBox || n.length() < 0.5) n.set(Math.sign(c.x) || 1, 0, 0); else n.normalize();
+    if (isBox || n.length() < 0.5) n.set(Math.sign(c.x) || 1, 0, 0).applyQuaternion(m.quaternion); else n.normalize();   // caixa girada (placa inclinada): a face de fora gira junto
     const d = new THREE.Mesh(new THREE.PlaneGeometry(sz.z * 0.97, sz.z * 0.97 * 0.325), MAT.plateDecal);
     const up = V(0, 1, 0).addScaledVector(n, -n.y).normalize(), xa = up.clone().cross(n);
     d.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(xa, up, n)); d.scale.x = -1;   // o carro é espelhado em z: desespelha o texto
@@ -2045,7 +2045,7 @@ return (function () {
       <p class="count"><strong>${nParts}</strong> peças e conjuntos e <strong>${nFix}</strong> fixadores mapeados.</p>
       <p class="wlabel">Comece por</p>
       <div class="chips">${(CAR.welcome || []).filter(id => REG[id]).map(chip).join('')}</div>
-      <p class="wtips">Em <button class="link" data-tabgo="fluxos">Como funciona</button>, o caminho do ar, do combustível, da força e da faísca aparece animado, passo a passo.</p></section>`;
+      <p class="wtips">Em <button class="link" data-tabgo="fluxos">Como funciona</button>, ${esc(CAR.flowTip || 'o caminho do ar, do combustível, da força e da faísca')} aparece animado, passo a passo.</p></section>`;
   }
   function welcomeSeen() { if (!welcomeOff) { welcomeOff = true; store.set(WKEY, '1'); } }   // na próxima visita o painel já abre direto na lista
   const plist = ids => `<ul class="plist">${ids.map(i => `<li><button data-id="${i}">${esc(infoOf(i).n)}</button></li>`).join('')}</ul>`;

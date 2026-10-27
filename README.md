@@ -1,7 +1,8 @@
 # Seu carro por dentro
 
 Página única que mostra um carro em 3D, peça por peça: o que cada uma faz, onde fica, o código, como é presa,
-como desmontar e montar, os caminhos do ar, do combustível, da força e da faísca animados, sintomas e revisões.
+como desmontar e montar, os caminhos do ar, do combustível, da força e da faísca animados (no elétrico, da energia,
+da regeneração, da recarga e do calor), sintomas e revisões.
 Dá para trocar de carro pelo botão **Trocar carro**, no topo. O endereço guarda o carro e a peça abertos
 (`#tiida-c11/corrente`), e cada peça tem **Copiar resumo** (no celular, **Enviar**) para mandar ao mecânico.
 
@@ -11,6 +12,10 @@ Carros prontos:
 - **Honda Civic LX 1.7 2005, sétima geração, motor D17, manual de 5 marchas** (`src/cars/civic-g7*.js`)
 - **Nissan Tiida S 1.8 flex 2010/2011 (C11), motor MR18DE, manual de 6 marchas, hatch** (`src/cars/tiida-c11*.js`)
 - **VW Gol Power 1.6 8V flex 2010/2011 (G5), motor EA111, manual de 5 marchas, hatch 4 portas** (`src/cars/gol-g5*.js`)
+- **BYD Dolphin 2024, elétrico de 70 kW (95 cv), bateria Blade de 44,9 kWh, tração dianteira, hatch** (`src/cars/byd-dolphin*.js`):
+  conjunto 8 em 1 (motor, redutor e eletrônica), bateria sob o assoalho com placa fria, porta de recarga CCS2,
+  bomba de calor, freio integrado (IPB) e freio de estacionamento elétrico. Os passos de alta tensão explicam o serviço,
+  não substituem o treinamento e o manual de reparo da BYD.
 
 A análise de UX e design, com o que foi corrigido e o que fica para a próxima rodada, está em [`docs/analise-ux.md`](docs/analise-ux.md).
 
@@ -90,7 +95,8 @@ tools/shot.mjs          abre a página num Chromium sem tela e tira capturas (TO
 
 1. Copie `src/cars/civic-g7.js` para `src/cars/<novo-id>.js` e troque os dados de cabeçalho:
    `id`, `order`, `codePrefix` (prefixo dos códigos de referência, ex. `GOL`), `badge`, `name`, `title`, `sub`,
-   `size`, `wheelR`, `profile` (silhueta da garagem), `open` (peças que abrem: capô, portas, tampa) e `about`.
+   `size`, `wheelR`, `profile` (silhueta da garagem), `open` (peças que abrem: capô, portas, tampa) e `about`
+   (num elétrico, `flowTip` troca a frase das boas-vindas sobre os caminhos animados).
 2. Em `data()`, descreva sistemas, peças, fixadores com torques, sintomas, caminhos e revisões.
 3. Em `<novo-id>.geo.js`, ajuste os perfis da carroceria (`BK`), as divisões dos painéis e a mecânica.
    A carroceria é gerada por seções ao longo do carro, então um hatch, um sedã ou uma perua mudam só os perfis.
