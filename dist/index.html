@@ -16853,13 +16853,13 @@ function buildFasteners() {
 }
 /* ===== Cena, estados de material, explosão, animações, seleção ===== */
 const APP = {
-  view: 'xray', explode: 0, bolts: false, color: false, run: false,
+  view: 'xray', explode: 0, bolts: false, color: false, run: false, ao: true,
   focus: null, flow: null, flowStep: -1, intro: null, t: 0,
   follow: true, motion: { engine: 0, wheels: 0, steer: 0, fan: 0 }, wheelAng: 0, wheelSpeed: 0, steer: 0, steerShown: 0
 };
 const XRAY_EXTRA = new Set(CAR.xrayExtra || []);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let renderer, scene, camera, controls, groundShadow, dirLight, AO, GEO;
+let renderer, scene, camera, controls, groundShadow, dirLight, AO, GEO, SSAO = null;
 let pickables = [];
 const MATS = { ghostBody: null, ghostDim: null, ghostFaint: null, hl: new Map(), rel: new Map(), sys: {}, hover: new Map() };
 
@@ -17363,6 +17363,97 @@ function finishDetails() {
     d.userData.noMerge = true; place(id, d, par);
   }));
 }
+/* ---------- sombra de contato (oclusão ambiente calculada na tela) ----------
+   A cena é desenhada numa textura com profundidade e antisserrilhado. A oclusão sai só da profundidade, em meia
+   resolução: para cada ponto, amostras num disco em volta dizem quanto a superfície está "enfiada" entre outras
+   (cantos, frestas, uma peça encostada na outra). Um desfoque que respeita as bordas limpa o ruído e a passada final
+   escurece a cor e converte para sRGB. Sem WebGL 2 fica desligada. */
+function makeSSAO() {
+  if (!renderer.capabilities.isWebGL2) return null;
+  const ex = renderer.extensions, hdr = ex.has('EXT_color_buffer_float') || ex.has('EXT_color_buffer_half_float');
+  const main = new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: hdr ? THREE.HalfFloatType : THREE.UnsignedByteType });
+  main.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
+  const tA = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false }), tB = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
+  const qs = new THREE.Scene(), qc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
+  quad.frustumCulled = false; qs.add(quad);
+  const vs = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
+  const common = { tDepth: { value: main.depthTexture }, near: { value: 0.03 }, far: { value: 80 } };
+  const mk = (u, fs, extra) => new THREE.ShaderMaterial(Object.assign({ uniforms: u, vertexShader: vs, fragmentShader: fs, depthTest: false, depthWrite: false, blending: THREE.NoBlending }, extra));
+  const aoU = Object.assign({ projInv: { value: new THREE.Matrix4() }, pxy: { value: new THREE.Vector2() }, texel: { value: new THREE.Vector2() }, radius: { value: 0.10 }, strength: { value: 4.0 } }, common);
+  const aoMat = mk(aoU, `
+    #include <packing>
+    uniform sampler2D tDepth; uniform mat4 projInv; uniform vec2 pxy, texel; uniform float radius, strength;
+    varying vec2 vUv;
+    vec3 vpos(vec2 uv) { vec4 p = projInv * vec4(uv * 2.0 - 1.0, texture2D(tDepth, uv).x * 2.0 - 1.0, 1.0); return p.xyz / p.w; }
+    float noise(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
+    void main() {
+      float d = texture2D(tDepth, vUv).x;
+      if (d >= 0.99999) { gl_FragColor = vec4(1.0); return; }
+      vec3 P = vpos(vUv);
+      vec3 pr = vpos(vUv + vec2(texel.x, 0.0)), pl = vpos(vUv - vec2(texel.x, 0.0)), pu = vpos(vUv + vec2(0.0, texel.y)), pd = vpos(vUv - vec2(0.0, texel.y));
+      vec3 dx = abs(pr.z - P.z) < abs(P.z - pl.z) ? pr - P : P - pl, dy = abs(pu.z - P.z) < abs(P.z - pd.z) ? pu - P : P - pd;
+      vec3 N = normalize(cross(dx, dy));
+      vec2 r = min(pxy * (radius / -P.z), vec2(0.12));
+      if (r.y < texel.y * 2.0) { gl_FragColor = vec4(1.0); return; }
+      float a0 = noise(gl_FragCoord.xy) * 6.2831853, occ = 0.0;
+      for (int i = 0; i < 14; i++) {
+        float t = (float(i) + 0.5) / 14.0, a = a0 + float(i) * 2.39996323;
+        vec3 v = vpos(vUv + vec2(cos(a), sin(a)) * sqrt(t) * r) - P;
+        float l2 = dot(v, v);
+        if (l2 > 2.5e-5) occ += max(0.0, dot(N, v) * inversesqrt(l2) - 0.2) * max(0.0, 1.0 - l2 / (radius * radius));   // viés: plano não se sombreia
+      }
+      float ao = clamp(1.0 - strength * 1.15 * occ / 14.0, 0.0, 1.0);
+      gl_FragColor = vec4(ao, ao, ao, 1.0);
+    }`);
+  const blU = Object.assign({ tAO: { value: null }, dir: { value: new THREE.Vector2() } }, common);
+  const blMat = mk(blU, `
+    #include <packing>
+    uniform sampler2D tAO, tDepth; uniform vec2 dir; uniform float near, far;
+    varying vec2 vUv;
+    float lz(vec2 uv) { return -perspectiveDepthToViewZ(texture2D(tDepth, uv).x, near, far); }
+    void main() {
+      float z0 = lz(vUv), s = 0.0, w = 0.0;
+      for (int i = -4; i <= 4; i++) {
+        vec2 uv = vUv + dir * float(i);
+        float wt = exp(-float(i * i) / 10.0) * max(0.0, 1.0 - abs(lz(uv) - z0) / (0.015 + 0.02 * z0));
+        s += texture2D(tAO, uv).r * wt; w += wt;
+      }
+      float a = w > 1e-4 ? s / w : 1.0;
+      gl_FragColor = vec4(a, a, a, 1.0);
+    }`);
+  const cpU = { tColor: { value: main.texture }, tAO: { value: tA.texture }, tDepth: { value: main.depthTexture }, dbg: { value: 0 } };
+  const cpMat = mk(cpU, `
+    uniform sampler2D tColor, tAO, tDepth; uniform float dbg;
+    varying vec2 vUv;
+    void main() {
+      vec4 c = texture2D(tColor, vUv);
+      float a = texture2D(tAO, vUv).r;
+      if (dbg > 0.5) c = vec4(1.0);
+      // em cima de fundo transparente (chão), a sombra entra como opacidade
+      gl_FragColor = vec4(c.rgb * a, c.a + (1.0 - c.a) * (1.0 - a) * 0.85);
+      #include <encodings_fragment>
+    }`, { toneMapped: false });
+  const sz = new THREE.Vector2(-1, -1), cur = new THREE.Vector2();
+  function render() {
+    renderer.getDrawingBufferSize(cur);
+    if (!cur.equals(sz)) {
+      sz.copy(cur); main.setSize(sz.x, sz.y);
+      const w = Math.max(1, Math.ceil(sz.x / 2)), h = Math.max(1, Math.ceil(sz.y / 2)); tA.setSize(w, h); tB.setSize(w, h);
+      aoU.texel.value.set(1 / sz.x, 1 / sz.y);
+    }
+    renderer.setRenderTarget(main); renderer.render(scene, camera);
+    aoU.projInv.value.copy(camera.projectionMatrixInverse);
+    aoU.pxy.value.set(camera.projectionMatrix.elements[0] * 0.5, camera.projectionMatrix.elements[5] * 0.5);
+    common.near.value = camera.near; common.far.value = camera.far;
+    quad.material = aoMat; renderer.setRenderTarget(tA); renderer.render(qs, qc);
+    quad.material = blMat; blU.tAO.value = tA.texture; blU.dir.value.set(1 / tA.width, 0); renderer.setRenderTarget(tB); renderer.render(qs, qc);
+    blU.tAO.value = tB.texture; blU.dir.value.set(0, 1 / tA.height); renderer.setRenderTarget(tA); renderer.render(qs, qc);
+    cpU.dbg.value = APP.aoDebug ? 1 : 0;
+    quad.material = cpMat; renderer.setRenderTarget(null); renderer.render(qs, qc);
+  }
+  function dispose() { [main, tA, tB].forEach(t => t.dispose()); main.depthTexture.dispose(); [aoMat, blMat, cpMat].forEach(m => m.dispose()); quad.geometry.dispose(); }
+  return { render, dispose };
+}
 /* ---------- inicialização da cena ---------- */
 function initScene(canvas) {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
@@ -17371,6 +17462,7 @@ function initScene(canvas) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.localClippingEnabled = false;
+  SSAO = makeSSAO();
   scene = new THREE.Scene();
   const pm = new THREE.PMREMGenerator(renderer);
   scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
@@ -18396,21 +18488,22 @@ return (function () {
   /* ---------- barra: vista + menus Abrir, Mostrar e Vistas ---------- */
   const syncView = () => $$('#viewseg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === APP.view));
   $('#viewseg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (APP.intro) endIntro(); APP.view = b.dataset.v; DM.prevView = null; syncView(); applyStates(); });
-  const TOGS = { hood: 'Capô aberto', doors: 'Portas e tampa abertas', bolts: 'Encaixes', color: 'Cores por sistema', run: 'Motor girando', pad: 'Setas na tela' };
+  const TOGS = { hood: 'Capô aberto', doors: 'Portas e tampa abertas', bolts: 'Encaixes', color: 'Cores por sistema', run: 'Motor girando', pad: 'Setas na tela', ao: 'Sombra de contato' };
   const doorArts = () => ARTS.filter(a => a.kind !== 'hood');
-  const isOn = k => k === 'hood' ? !!(artOf('hood') || {}).t : k === 'doors' ? doorArts().some(a => a.t) : k === 'bolts' ? !!APP.bolts : k === 'color' ? !!APP.color : k === 'pad' ? !$('#navpad').hidden : !!APP.run;
+  const isOn = k => k === 'hood' ? !!(artOf('hood') || {}).t : k === 'doors' ? doorArts().some(a => a.t) : k === 'bolts' ? !!APP.bolts : k === 'color' ? !!APP.color : k === 'pad' ? !$('#navpad').hidden : k === 'ao' ? !!(SSAO && APP.ao) : !!APP.run;
   function setTog(k, on) {
     if (k === 'hood' || k === 'doors') (k === 'hood' ? ARTS.filter(a => a.kind === 'hood') : doorArts()).forEach(a => { a.t = on ? 1 : 0; if (DM.g) DM.was[ARTS.indexOf(a)] = a.t; });
     else if (k === 'bolts') { APP.bolts = on; applyStates(); }
     else if (k === 'color') { APP.color = on; applyStates(); }
     else if (k === 'run') APP.run = on;
     else if (k === 'pad') showPad(on);
+    else if (k === 'ao') { APP.ao = on; store.set(AOKEY, on ? '1' : '0'); }
     syncMenus();
   }
   const tg = k => `<button class="mi" role="menuitemcheckbox" aria-checked="${isOn(k)}" data-tog="${k}"><span>${TOGS[k]}</span><i class="sw2" aria-hidden="true"></i></button>`;
   const secAbrir = () => `<p class="mh">Abrir</p>${tg('hood')}${tg('doors')}`;
   const secMostrar = () => `<p class="mh">Mostrar</p>${tg('bolts')}${tg('color')}${tg('run')}<label class="mi rg"><span>Explodir</span><input type="range" min="0" max="1" step="0.01" value="${APP.explode}" data-explode aria-label="Explodir as peças"></label><p class="mnote">Com uma peça ou um sistema escolhido, só eles se separam.</p>`;
-  const secVistas = () => `<p class="mh">Vistas</p><div class="vgrid">${[['inicial', 'Inicial'], ['frente', 'Frente'], ['traseira', 'Traseira'], ['lado', 'Lado'], ['cima', 'De cima'], ['baixo', 'Por baixo']].map(([k, t]) => `<button class="vb" data-view="${k}">${t}</button>`).join('')}</div>${tg('pad')}<p class="mnote">${TAP === 'Clique' ? 'Setas ou W A S D andam; Q e E descem e sobem; Shift vai mais rápido.' : 'Segure uma seta para andar; o centro volta à vista inicial.'}</p>`;
+  const secVistas = () => `<p class="mh">Vistas</p><div class="vgrid">${[['inicial', 'Inicial'], ['frente', 'Frente'], ['traseira', 'Traseira'], ['lado', 'Lado'], ['cima', 'De cima'], ['baixo', 'Por baixo']].map(([k, t]) => `<button class="vb" data-view="${k}">${t}</button>`).join('')}</div>${tg('pad')}${SSAO ? tg('ao') : ''}<p class="mnote">${TAP === 'Clique' ? 'Setas ou W A S D andam; Q e E descem e sobem; Shift vai mais rápido.' : 'Segure uma seta para andar; o centro volta à vista inicial.'}</p>`;
   let menuBtn = null;
   function openMenu(btn) {
     const name = btn.dataset.menu;
@@ -18558,6 +18651,8 @@ return (function () {
   function syncPad() { $$('[data-nav]', pad).forEach(b => b.classList.toggle('on', NAV.keys.has(b.dataset.nav))); }
   function showPad(on) { pad.hidden = !on; store.set(PADKEY, on ? '1' : '0'); }
   pad.hidden = store.get(PADKEY) === '0';
+  const AOKEY = 'carros-sombra-contato';
+  APP.ao = store.get(AOKEY) !== '0';
   pad.addEventListener('pointerdown', e => {
     const b = e.target.closest('[data-nav]'); if (!b) return;
     e.preventDefault(); if (b.dataset.nav === 'home') { atHome = false; NAV.vel.set(0, 0, 0); homeView(); return; }
@@ -18652,7 +18747,7 @@ return (function () {
     if (!reduceMotion) { const k = 0.4 + 0.22 * Math.sin(now * 0.004); MATS.hl.forEach(m => { m.emissiveIntensity = k; }); }
     if (APP.flow) flowUpdate(now);
     introStep(now);
-    renderer.render(scene, camera);
+    if (SSAO && APP.ao) SSAO.render(); else renderer.render(scene, camera);
     renderLabels(false); doHover();
   }
 
@@ -18686,6 +18781,7 @@ return (function () {
     Object.values(MAT).forEach(m => mats.add(m)); [MATS.ghostBody, MATS.ghostDim, MATS.ghostFaint].forEach(m => m && mats.add(m));
     mats.forEach(m => { ['map', 'bumpMap', 'alphaMap', 'roughnessMap', 'normalMap', 'emissiveMap'].forEach(k => { if (m[k]) m[k].dispose(); }); m.dispose(); });
     if (scene.environment) scene.environment.dispose();
+    if (SSAO) { SSAO.dispose(); SSAO = null; }
     controls.dispose(); renderer.dispose(); renderer.forceContextLoss();
     host.innerHTML = '';
     if (window.__car === api) window.__car = null;
