@@ -2,7 +2,7 @@
 
 Uso (precisa do CadQuery):  python tools/kit/build.py [peça ...]   (com nomes, refaz só essas e mantém as outras)
 Cada peça vira malhas por material: posições quantizadas em 16 bits dentro da caixa da peça e índices em 16 ou
-32 bits, tudo num bloco binário comprimido com gzip e guardado em base64. O motor 3D descomprime uma vez ao abrir
+32 bits, ambos guardados como diferenças (comprimem melhor), tudo num bloco binário com gzip e em base64. O motor 3D descomprime uma vez ao abrir
 a página (DecompressionStream) e monta as geometrias quando um carro pede a peça.
 """
 import base64, gzip, json, math, os, struct, sys, time
@@ -52,6 +52,104 @@ ITEMS = {
 }
 
 
+
+# ---------- cabeçote, tampa, coletores, protetor de calor e cárter: nas medidas de cada motor ----------
+# Cada lista reproduz o desenho do carro (src/cars): faces do cabeçote, janelas, dutos, posição dos parafusos
+# (os fixadores do app ficam sobre as orelhas e torres modeladas aqui) e onde encostam sensores, mangueiras e o catalisador.
+def _mid(zs):
+    zs = sorted(zs)
+    return [(zs[i] + zs[i + 1]) / 2 for i in range(len(zs) - 1)]
+
+
+def engine_items():
+    E = {}
+    # Nissan MR18DE (Tiida): admissão na frente (+x), escape para o corta-fogo
+    zt, cy_t, mains_t = -0.088, [-0.223, -0.133, -0.043, 0.047], [-0.268, -0.178, -0.088, 0.002, 0.092]
+    E['head_tiida'] = (K.cylinder_head, dict(c=(1.40, 0.69, zt), size=(0.26, 0.11, 0.40), cyl_z=cy_t, ex_dir=-1, port_y=0.685, in_y=0.69,
+        ends=[('box', 1.355, 0.70, 0.118, 0.07, 0.05, 0.012), ('cyl', 1.37, 0.71, 0.112, 0.142, 0.019), ('cyl', 1.34, 0.71, 0.112, 0.132, 0.011),
+              ('cyl', 1.40, 0.66, 0.112, 0.128, 0.013), ('box', 1.40, 0.758, 0.111, 0.15, 0.045, 0.014)], eye=(1.29, 0.112, 1)), MID)
+    E['cover_tiida'] = (K.valve_cover, dict(c=(1.40, 0.782, zt), size=(0.235, 0.064, 0.38), mat='covers', wells=[(1.40, z) for z in cy_t], well_r=0.014,
+        towers=[(1.40 + sd * 0.105, z) for z in mains_t for sd in (1, -1)], filler=(1.47, -0.24, 0.028, 0.815),
+        ribs=[(1.345, 0.817, -0.088, 0.012, 0.006, 0.29), (1.455, 0.817, -0.07, 0.012, 0.006, 0.26)],
+        nipples=[((1.50, 0.785, 0.06), (1.518, 0.785, 0.06), 0.012)]), MID)
+    E['intake_tiida'] = (K.intake_manifold, dict(runners=[[(1.532, 0.69, z), (1.57, 0.68, z), (1.61, 0.70, z), (1.645, 0.75, z), (1.668, 0.785, z)] for z in cy_t], r=0.02,
+        plenum=((1.685, 0.79, -0.108), (0.12, 0.10, 0.34), 0.03), flange=(1.532, 1.546, 0.652, 0.728, -0.262, 0.086), mat='plastic',
+        neck=([(1.69, 0.785, 0.03), (1.69, 0.785, 0.056), (1.69, 0.785, 0.082)], 0.031), tb=((1.69, 0.785, 0.084, 0.085, 0.085, 0.008), '|Z'),
+        bosses=[((1.545, 0.70, z), (1.556, 0.712, z), 0.012) for z in cy_t] + [((1.61, 0.712, z + 0.012), (1.61, 0.748, z + 0.012), 0.0045) for z in cy_t],
+        ribs=[(1.746, 0.79, z, 0.006, 0.07, 0.006) for z in _mid(cy_t)]), MID)
+    E['exhaust_tiida'] = (K.exhaust_manifold, dict(prims=[[(1.27, 0.685, z), (1.235, 0.66, z * 0.8 - 0.02), (1.205, 0.605, -0.092)] for z in cy_t], r=0.018,
+        flange=(1.258, 1.27, 0.655, 0.715, -0.26, 0.08), ears=[((1.258, y, z), (1.27, y, z), 0.011) for y in (0.66, 0.715) for z in (-0.268, -0.178, -0.088, 0.002)],
+        collector=((1.205, 0.62, -0.092), (1.18, 0.572, -0.09), 0.028), outlet=(1.18, 0.568, -0.09, 0.075, False),
+        boss=((1.20, 0.575, -0.105), (1.218, 0.598, -0.118), 0.012)), MID)
+    E['shield_tiida'] = (K.heat_shield, dict(x_in=1.262, x_out=1.145, y_top=0.738, y_bot=0.61, z0=-0.27, z1=0.075, ribs=(-0.19, -0.095, 0.0), tabs=(-0.23, 0.04)), MID)
+    E['pan_tiida'] = (lambda: K.oil_pan(c=(1.40, 0.30, -0.093), size=(0.225, 0.39), depth=0.048, mat='aluDark', taper=0.0, flange=(0.003, 0.003, 0.008), ribs=6)
+                      + K.oil_pan(c=(1.40, 0.252, -0.098), size=(0.205, 0.36), depth=0.072, mat='steelDark', taper=7.0, flange=(0.006, 0.006, 0.004),
+                                  drain=(1.46, -0.18), beads=(0.215,)), {}, MID)
+    # Honda D17 (Civic): mesma disposição do Tiida
+    zc, cy_c = -0.088, [-0.214, -0.130, -0.046, 0.038]
+    E['head_civic'] = (K.cylinder_head, dict(c=(1.40, 0.686, zc), size=(0.245, 0.10, 0.40), cyl_z=cy_c, ex_dir=-1, port_y=0.685, in_y=0.69,
+        ends=[('box', 1.355, 0.695, 0.118, 0.07, 0.05, 0.012), ('cyl', 1.37, 0.705, 0.112, 0.142, 0.019), ('cyl', 1.34, 0.70, 0.112, 0.132, 0.011),
+              ('box', 1.40, 0.752, 0.111, 0.07, 0.05, 0.014)], eye=(1.29, 0.112, 1)), MID)
+    E['cover_civic'] = (K.valve_cover, dict(c=(1.40, 0.766, zc), size=(0.20, 0.06, 0.37), mat='box', wells=[(1.40, z) for z in cy_c], well_r=0.014,
+        towers=[(1.40 + sd * 0.085, z) for z in (-0.26, -0.088, 0.08) for sd in (1, -1)], filler=(1.45, 0.03, 0.028, 0.799),
+        ribs=[(1.348, 0.798, -0.088, 0.012, 0.006, 0.30), (1.452, 0.798, -0.13, 0.012, 0.006, 0.22), (1.40, 0.799, -0.26, 0.17, 0.008, 0.02), (1.40, 0.799, 0.08, 0.17, 0.008, 0.02)],
+        nipples=[((1.485, 0.775, -0.20), (1.502, 0.775, -0.20), 0.012)]), MID)
+    E['intake_civic'] = (K.intake_manifold, dict(runners=[[(1.5245, 0.69, z), (1.56, 0.68, z), (1.61, 0.70, z), (1.645, 0.75, z), (1.668, 0.785, z)] for z in cy_c], r=0.02,
+        plenum=((1.685, 0.79, -0.108), (0.12, 0.10, 0.34), 0.03), flange=(1.5245, 1.5365, 0.652, 0.728, -0.253, 0.077), mat='aluDark',
+        neck=([(1.69, 0.785, 0.03), (1.69, 0.785, 0.056), (1.69, 0.785, 0.082)], 0.031), tb=((1.69, 0.785, 0.084, 0.085, 0.085, 0.008), '|Z'),
+        bosses=[((1.545, 0.70, z), (1.556, 0.712, z), 0.012) for z in cy_c], ribs=[(1.746, 0.79, z, 0.006, 0.07, 0.006) for z in _mid(cy_c)]), MID)
+    E['exhaust_civic'] = (K.exhaust_manifold, dict(prims=[[(1.2775, 0.685, z), (1.24, 0.66, z * 0.8 - 0.02), (1.205, 0.605, -0.092)] for z in cy_c], r=0.018,
+        flange=(1.2655, 1.2775, 0.655, 0.715, -0.253, 0.077), ears=[((1.2655, y, z), (1.2775, y, z), 0.011) for y in (0.66, 0.715) for z in (-0.256, -0.172, -0.088, -0.004)],
+        collector=((1.205, 0.62, -0.092), (1.18, 0.572, -0.09), 0.028), outlet=(1.18, 0.568, -0.09, 0.075, False),
+        boss=((1.20, 0.575, -0.105), (1.218, 0.598, -0.118), 0.012)), MID)
+    E['shield_civic'] = (K.heat_shield, dict(x_in=1.27, x_out=1.145, y_top=0.738, y_bot=0.61, z0=-0.26, z1=0.07, ribs=(-0.18, -0.09, 0.0), tabs=(-0.22, 0.03)), MID)
+    E['pan_civic'] = (K.oil_pan, dict(c=(1.40, 0.30, -0.098), size=(0.205, 0.35), depth=0.11, mat='aluDark', taper=4.0, flange=(0.0115, 0.0175, 0.008),
+        drain=(1.46, -0.18), ribs=5), MID)
+    # VW EA111 8V (Gol): escape na frente, admissão para o corta-fogo, velas inclinadas na frente do cabeçote
+    zg, cy_g = -0.092, [-0.215, -0.133, -0.051, 0.031]
+    E['head_gol'] = (K.cylinder_head, dict(c=(1.33, 0.655, zg), size=(0.22, 0.10, 0.38), cyl_z=cy_g, ex_dir=1, port_y=0.645, in_y=0.645,
+        ends=[('box', 1.36, 0.705, 0.1, 0.06, 0.05, 0.006)], wells=[((1.362, 0.609, z), (1.43, 0.745, z), 0.013) for z in cy_g]), MID)
+    E['cover_gol'] = (K.valve_cover, dict(c=(1.33, 0.745, zg), size=(0.16, 0.05, 0.36), mat='aluDark', r_top=0.015,
+        towers=[(1.33 + sd * 0.07, z) for z in (-0.255, -0.15, -0.035, 0.07) for sd in (1, -1)], filler=(1.31, -0.262, 0.024, 0.771),
+        ribs=[(1.33, 0.771, zg + k * 0.045, 0.13, 0.006, 0.012) for k in range(-3, 4)], nipples=[((1.258, 0.762, -0.17), (1.244, 0.762, -0.17), 0.011)]), MID)
+    E['intake_gol'] = (K.intake_manifold, dict(runners=[[(1.222, 0.645, z), (1.185, 0.62, z), (1.14, 0.64, z), (1.115, 0.69, z), (1.11, 0.715, z)] for z in cy_g], r=0.019,
+        plenum=((1.11, 0.705, -0.112), (0.09, 0.09, 0.33), 0.028), flange=(1.208, 1.22, 0.612, 0.678, -0.252, 0.068), mat='plastic',
+        neck=([(1.11, 0.705, 0.045), (1.11, 0.705, 0.07), (1.11, 0.705, 0.094)], 0.03), tb=((1.11, 0.705, 0.098, 0.085, 0.085, 0.008), '|Z'),
+        bosses=[((1.209, 0.658, z), (1.202, 0.672, z), 0.011) for z in cy_g] + [((1.17, 0.638, z + 0.012), (1.17, 0.672, z + 0.012), 0.0045) for z in cy_g],
+        ribs=[(1.064, 0.705, z, 0.006, 0.07, 0.006) for z in _mid(cy_g)]), MID)
+    E['exhaust_gol'] = (K.exhaust_manifold, dict(prims=[[(1.44, 0.645, z), (1.485, 0.625, z * 0.8 - 0.02), (1.525, 0.592, -0.10)] for z in cy_g], r=0.018,
+        flange=(1.44, 1.452, 0.615, 0.675, -0.25, 0.066), ears=[((1.44, y, z), (1.452, y, z), 0.011) for y in (0.62, 0.675) for z in (-0.256, -0.174, -0.092, -0.010)],
+        collector=((1.523, 0.605, -0.10), (1.54, 0.556, -0.10), 0.026), outlet=(1.54, 0.552, -0.10, 0.073, True),
+        boss=((1.53, 0.57, -0.118), (1.542, 0.59, -0.13), 0.012)), MID)
+    E['shield_gol'] = (K.heat_shield, dict(x_in=1.448, x_out=1.575, y_top=0.715, y_bot=0.66, z0=-0.225, z1=0.075, ribs=(-0.15, -0.07, 0.01), tabs=(-0.20, 0.05)), MID)
+    E['pan_gol'] = (K.oil_pan, dict(c=(1.33, 0.28, -0.102), size=(0.19, 0.35), depth=0.094, mat='steelDark', taper=6.0, flange=(0.0075, 0.01, 0.008),
+        sump=(-0.26, -0.06, 0.06), drain=(1.38, -0.18), beads=(0.25,)), MID)
+    # PSA TU3 (206): escape na frente, admissão atrás com o plenum alto, bobina compacta em cima da tampa
+    zp, cy_p = -0.157, [-0.035, -0.117, -0.199, -0.281]
+    E['head_206'] = (K.cylinder_head, dict(c=(1.35, 0.676, zp), size=(0.24, 0.104, 0.35), cyl_z=cy_p, ex_dir=1, port_y=0.67, in_y=0.675,
+        ends=[('box', 1.37, 0.68, 0.021, 0.05, 0.05, 0.008)], eye=(1.45, 0.018, 1)), MID)
+    E['cover_206'] = (K.valve_cover, dict(c=(1.345, 0.758, zp), size=(0.19, 0.056, 0.33), mat='plastic', r_top=0.016, wells=[(1.37, z) for z in cy_p], well_r=0.013,
+        bosses=[(x, z) for x in (1.30, 1.39) for z in (-0.03, -0.157, -0.28)], filler=(1.29, -0.07, 0.026, 0.787),
+        nipples=[((1.272, 0.776, -0.30), (1.262, 0.792, -0.296), 0.01)]), MID)
+    E['intake_206'] = (K.intake_manifold, dict(runners=[[(1.23, 0.675, z), (1.17, 0.685, z), (1.115, 0.75, z), (1.13, 0.81, z), (1.15, 0.84, z)] for z in cy_p], r=0.019,
+        plenum=((1.15, 0.845, -0.157), (0.12, 0.07, 0.33), 0.025), flange=(1.218, 1.23, 0.64, 0.71, -0.316, 0.0), mat='plastic',
+        neck=([(1.256, 0.86, -0.03), (1.22, 0.855, -0.05), (1.19, 0.85, -0.07)], 0.029), tb=((1.258, 0.86, -0.03, 0.008, 0.085, 0.085), '|X'),
+        bosses=[((1.198, 0.69, z), (1.188, 0.706, z), 0.011) for z in cy_p], ribs=[(1.089, 0.845, z, 0.006, 0.05, 0.006) for z in _mid(cy_p)]), MID)
+    E['exhaust_206'] = (K.exhaust_manifold, dict(prims=[[(1.47, 0.67, z), (1.53, 0.64, z * 0.8 - 0.02), (1.568, 0.585, -0.12)] for z in cy_p], r=0.018,
+        flange=(1.47, 1.482, 0.64, 0.70, -0.316, 0.0), ears=[((1.47, y, z), (1.482, y, z), 0.011) for y in (0.645, 0.70) for z in (-0.24, -0.158, -0.076, 0.005)],
+        collector=((1.568, 0.60, -0.12), (1.575, 0.532, -0.12), 0.026), outlet=(1.575, 0.528, -0.12, 0.069, True),
+        boss=((1.585, 0.555, -0.099), (1.60, 0.585, -0.097), 0.012)), MID)
+    E['shield_206'] = (K.heat_shield, dict(x_in=1.478, x_out=1.61, y_top=0.725, y_bot=0.62, z0=-0.325, z1=0.02, ribs=(-0.25, -0.157, -0.06), tabs=(-0.29, -0.02)), MID)
+    E['pan_206'] = (K.oil_pan, dict(c=(1.345, 0.30, -0.16), size=(0.205, 0.315), depth=0.11, mat='aluDark', taper=4.0, flange=(0.0125, 0.0175, 0.008),
+        drain=(1.40, -0.22), ribs=4), MID)
+    for k, (fn, kw, q) in E.items():
+        if k.startswith(('intake_', 'exhaust_')):
+            q = (0.001, 0.5)   # superfícies varridas: com a malha média sairiam com o dobro de triângulos
+        ITEMS[k] = (fn, kw, q, 'box')
+
+
+engine_items()
+
 def mesh_of(shape, tol, ang):
     """Malha com tolerância absoluta (em metros). O tessellate do CadQuery refaz a malha com tolerância relativa ao
     tamanho de cada aresta, o que afina demais as peças pequenas; aqui a malha é feita uma vez e lida face a face."""
@@ -79,6 +177,8 @@ def previous():
     if not os.path.exists(OUT):
         return {}, b''
     src = open(OUT).read()
+    if 'v: 2,' not in src:   # formato antigo: refaz tudo
+        return {}, b''
     items = json.loads(src.split('items: ', 1)[1].split(',\n  b64: ', 1)[0])
     raw = gzip.decompress(base64.b64decode(src.split('b64: "', 1)[1].split('"', 1)[0]))
     return items, raw
@@ -119,13 +219,17 @@ def main(only=None):
         size = np.maximum(hi - lo, 1e-6)
         entry = {'min': [round(float(x), 6) for x in lo], 'size': [round(float(x), 6) for x in size], 'uv': uv, 'sub': []}
         for mat, V, T in subs:
-            q = np.round((V - lo) / size * 65535).astype(np.uint16)
+            # posições em 16 bits dentro da caixa da peça; guardadas como diferença para o vértice anterior, um eixo
+            # de cada vez (x de todos, depois y, depois z), e os índices também em diferença: o gzip comprime o dobro
+            q = np.round((V - lo) / size * 65535).astype(np.int64)
             wide = len(V) > 65535
+            dq = np.diff(q, axis=0, prepend=np.zeros((1, 3), np.int64)) % 65536
+            dI = np.diff(T.reshape(-1), prepend=0) % ((1 << 32) if wide else 65536)
             off = len(blob)
-            blob += q.astype('<u2').tobytes()
+            blob += dq.T.astype('<u2').tobytes()
             pad4(blob)
             ioff = len(blob)
-            blob += T.astype('<u4' if wide else '<u2').tobytes()
+            blob += dI.astype('<u4' if wide else '<u2').tobytes()
             pad4(blob)
             entry['sub'].append({'m': mat, 'nv': int(len(V)), 'nt': int(len(T)), 'v': off, 'i': ioff, 'w': 1 if wide else 0})
         index[name] = entry
@@ -137,8 +241,8 @@ def main(only=None):
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w') as f:
         f.write('/* ===== Peças em CAD (gerado por tools/kit/build.py: não edite à mão) =====\n')
-        f.write('   Malhas quantizadas em 16 bits e comprimidas com gzip; o motor 3D descomprime ao abrir a página. */\n')
-        f.write('window.CAR_KIT = { items: ' + json.dumps(index, separators=(',', ':')) + ',\n  b64: "' + b64 + '" };\n')
+        f.write('   Malhas quantizadas em 16 bits, em diferenças, comprimidas com gzip; o motor 3D descomprime ao abrir a página. */\n')
+        f.write('window.CAR_KIT = { v: 2, items: ' + json.dumps(index, separators=(',', ':')) + ',\n  b64: "' + b64 + '" };\n')
     print(f'bruto {len(raw)/1024:.0f} KB, gzip {len(gz)/1024:.0f} KB, base64 {len(b64)/1024:.0f} KB, total {time.time() - t00:.0f}s')
 
 

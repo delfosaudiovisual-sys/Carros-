@@ -1636,7 +1636,7 @@ return { SYS, PARTS, FIX, FXKIND, SYMPTOMS, FLOWS, MAINT, SPECS, GUIDES, EXV };
   },
 
   geometry(K) {
-const { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, kit, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
+const { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, kit, pivotOf, box, cyl, tube, route, rod, sph, spring, ribbon, beltPath, plateFromHull,
   gBox, gCyl, gLathe, gTorus, gTube, curveOf, setBar, mono, makeBody, art, ANIM, WHEELS, ROUTES, lerp3 } = K;
 const WB = 2.443, XFA = WB / 2, XRA = -WB / 2;   // eixos dianteiro e traseiro (x)
 const TRK = 0.715, WR = 0.2915, WY = 0.29;        // bitola/2, raio do pneu 175/65R14, altura do centro da roda
@@ -1857,11 +1857,10 @@ ANIM.crank = { x: EXc, y: EYc, r: CR, rod: RODL, pid: 'pistoes', rid: 'bielas' }
 function buildEngine() {
   /* bloco, cárter, cabeçote */
   kit('bloco', 'block_206');
-  box('carter', [1.345, 0.245, -0.16], [0.21, 0.11, 0.325], MAT.aluDark, 0.025);
-  box('carter', [1.345, 0.303, -0.16], [0.225, 0.008, 0.34], MAT.aluDark);
+  kit('carter', 'pan_206');
   box('junta_cab', [1.35, 0.622, -0.157], [0.236, 0.004, 0.346], MAT.steel);
-  box('cabecote', [1.35, 0.676, -0.157], [0.24, 0.104, 0.35], MAT.alu, 0.01);
-  box('tampa_valv', [1.345, 0.758, -0.157], [0.19, 0.056, 0.33], MAT.plastic, 0.02);
+  kit('cabecote', 'head_206');
+  kit('tampa_valv', 'cover_206');
   add('tampa_oleo', gCyl(0.024, 0.024, 0.02, 'y', 24), MAT.yellow, [1.29, 0.795, -0.07]);
   box('bobina', [1.37, 0.806, -0.157], [0.05, 0.034, 0.30], MAT.coil, 0.008);
   box('bobina', [1.37, 0.815, 0.012], [0.03, 0.03, 0.04], MAT.black, 0.004);
@@ -1957,7 +1956,7 @@ function buildEngine() {
   kit('filtro_oleo', 'oil_filter', { at: [1.50, 0.36, -0.20], s: [0.94, 1, 1] });
   rod('vareta', [1.47, 0.30, 0.03], [1.495, 0.79, 0.03], 0.005, MAT.steel);
   add('vareta', gTorus(0.014, 0.004, 'x', 6, 18), MAT.yellow, [1.497, 0.805, 0.03]);
-  rod('respiro', [1.30, 0.785, -0.28], [1.22, 0.85, -0.25], 0.009, MAT.hose);
+  rod('respiro', [1.264, 0.794, -0.296], [1.22, 0.85, -0.25], 0.009, MAT.hose);
 }
 
 function buildIntake() {
@@ -1970,9 +1969,9 @@ function buildIntake() {
   sph('duto_ar', [1.45, 0.82, 0.12], 0.05, MAT.hose, null, [1, 0.6, 1.2]);
   add('tbi', gCyl(0.036, 0.036, 0.06, 'x', 28), MAT.aluDark, [1.29, 0.86, -0.03]);
   box('tbi', [1.29, 0.845, 0.028], [0.05, 0.05, 0.045], MAT.box, 0.006);
-  box('coletor_adm', [1.15, 0.845, -0.157], [0.12, 0.07, 0.33], MAT.plastic, 0.025);
-  tube('coletor_adm', [[1.26, 0.86, -0.03], [1.22, 0.855, -0.05], [1.19, 0.85, -0.07]], 0.029, MAT.plastic);
-  CYLZ.forEach(z => tube('coletor_adm', [[1.13, 0.81, z], [1.115, 0.75, z], [1.17, 0.685, z], [1.228, 0.675, z]], 0.019, MAT.plastic));
+  kit('coletor_adm', 'intake_206');
+  route('coletor_adm', [[1.26, 0.86, -0.03], [1.22, 0.855, -0.05], [1.19, 0.85, -0.07]]);
+  CYLZ.forEach(z => route('coletor_adm', [[1.13, 0.81, z], [1.115, 0.75, z], [1.17, 0.685, z], [1.228, 0.675, z]]));
   add('galeria', gCyl(0.011, 0.011, 0.31, 'z'), MAT.steel, [1.175, 0.735, -0.155]);
   CYLZ.forEach(z => { rod('bicos', [1.175, 0.728, z], [1.198, 0.69, z], 0.0085, MAT.black); rod('bicos', [1.198, 0.69, z], [1.205, 0.678, z], 0.004, MAT.steel); });
   box('tmap', [1.16, 0.888, -0.22], [0.03, 0.02, 0.03], MAT.black, 0.004);
@@ -1996,8 +1995,8 @@ function buildIgnitionCooling() {
   add('sens_rot', gCyl(0.01, 0.01, 0.05, 'y', 12), MAT.black, [1.24, 0.53, 0.045]);
   add('sens_det', gCyl(0.016, 0.016, 0.02, 'x', 16), MAT.black, [1.224, 0.46, -0.16]);
   add('sens_temp', gCyl(0.008, 0.008, 0.04, 'y', 12), MAT.black, [1.345, 0.735, 0.062]);
-  rod('sonda', [1.58, 0.52, -0.10], [1.61, 0.585, -0.10], 0.009, MAT.steel);
-  tube('sonda', [[1.61, 0.585, -0.10], [1.58, 0.70, -0.05], [1.45, 0.83, 0.05]], 0.003, MAT.cable);
+  rod('sonda', [1.60, 0.585, -0.097], [1.624, 0.633, -0.094], 0.009, MAT.steel);
+  tube('sonda', [[1.624, 0.633, -0.094], [1.635, 0.70, -0.07], [1.58, 0.76, -0.02], [1.45, 0.83, 0.05]], 0.003, MAT.cable);
   add('sens_oleo', gCyl(0.01, 0.01, 0.03, 'x', 12), MAT.black, [1.47, 0.36, -0.03]);
   add('sens_nivel_oleo', gCyl(0.012, 0.012, 0.02, 'x', 12), MAT.black, [1.455, 0.23, -0.05]);
   add('sens_vel', gCyl(0.012, 0.012, 0.04, 'y', 12), MAT.black, [1.20, 0.55, 0.30]);
@@ -2021,8 +2020,9 @@ function buildIgnitionCooling() {
 }
 
 function buildExhaust() {
-  CYLZ.forEach(z => tube('coletor_esc', [[1.472, 0.67, z], [1.53, 0.64, z * 0.8 - 0.02], [1.575, 0.56, -0.12]], 0.018, MAT.exhaust));
-  box('protetor', [1.52, 0.71, -0.157], [0.06, 0.01, 0.33], MAT.aluDark, 0, [0, 0, -0.55]);
+  kit('coletor_esc', 'exhaust_206');
+  CYLZ.forEach(z => route('coletor_esc', [[1.472, 0.67, z], [1.53, 0.64, z * 0.8 - 0.02], [1.575, 0.56, -0.12]]));
+  kit('protetor', 'shield_206');
   kit('catalisador', 'catalytic', { at: [1.575, 0.41, -0.12], rot: [0, Math.PI, 0], s: [0.92, 1.0, 0.92] });
   tube('catalisador', [[1.575, 0.29, -0.12], [1.58, 0.19, -0.10], [1.50, 0.156, -0.06], [1.08, 0.155, -0.01]], 0.022, MAT.exhaust);
   add('flexivel', gCyl(0.028, 0.028, 0.12, 'x', 20), MAT.steel, [1.00, 0.155, 0.0]);
@@ -2313,8 +2313,8 @@ function fxPositions() {
   CYLZ.forEach(z => A('fx_velas', [1.37, 0.66, z], up, 0.01));
   A('fx_bobina', [1.37, 0.824, -0.29], up, 0.008); A('fx_bobina', [1.37, 0.824, -0.03], up, 0.008);
   [-0.03, -0.157, -0.28].forEach(z => { A('fx_tampa_valv', [1.30, 0.787, z], up, 0.009); A('fx_tampa_valv', [1.39, 0.787, z], up, 0.009); });
-  [-0.076, -0.158, -0.24, 0.005].forEach(z => { A('fx_coletor_esc', [1.473, 0.645, z], px, 0.011); A('fx_coletor_esc', [1.473, 0.70, z], px, 0.011); });
-  [-0.076, -0.158, -0.24].forEach(z => { A('fx_coletor_adm', [1.227, 0.70, z], nx, 0.009); A('fx_coletor_adm', [1.227, 0.645, z], nx, 0.009); });
+  [-0.076, -0.158, -0.24, 0.005].forEach(z => { A('fx_coletor_esc', [1.484, 0.645, z], px, 0.011); A('fx_coletor_esc', [1.484, 0.70, z], px, 0.011); });
+  [-0.076, -0.158, -0.24].forEach(z => { A('fx_coletor_adm', [1.216, 0.70, z], nx, 0.009); A('fx_coletor_adm', [1.216, 0.645, z], nx, 0.009); });
   A('fx_galeria', [1.175, 0.748, 0.0], up, 0.008); A('fx_galeria', [1.175, 0.748, -0.30], up, 0.008);
   [[0.03, 0.03], [-0.03, 0.03], [0.03, -0.03], [-0.03, -0.03]].forEach(([dy, dz]) => A('fx_tbi', [1.262, 0.86 + dy, -0.03 + dz], px, 0.006));
   A('fx_polia_vira', [EXc, EYc, -0.46], [0, 0, -1], 0.02);
@@ -2346,7 +2346,7 @@ function fxPositions() {
   });
   A('fx_bateria', [1.585, 0.66, 0.38], up, 0.008); A('fx_bateria', [1.585, 0.66, 0.56], up, 0.008); A('fx_bateria', [1.70, 0.47, 0.47], up, 0.01);
   [[1.575, 0.525, -0.10], [1.575, 0.525, -0.14], [1.07, 0.155, 0.03], [1.07, 0.155, -0.03], [-1.40, 0.245, -0.45], [-1.40, 0.245, -0.49]].forEach((p, i) => A('fx_escape', p, i < 2 ? up : i < 4 ? px : up, 0.01));
-  A('fx_sonda', [1.595, 0.553, -0.10], [0.42, 0.9, 0], 0.013);
+  A('fx_sonda', [1.60, 0.585, -0.097], [0.45, 0.89, 0.06], 0.013);
   A('fx_sens_det', [1.212, 0.46, -0.16], nx, 0.009);
   A('fx_sens_rot', [1.24, 0.558, 0.045], up, 0.007);
   for (let k = 0; k < 5; k++) { const a = k * TAU / 5 + 0.3; A('fx_bomba_agua', [1.22 + 0.052 * Math.cos(a), 0.52 + 0.052 * Math.sin(a), -0.332], [0, 0, 1], 0.008); }

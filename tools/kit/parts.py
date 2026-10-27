@@ -386,3 +386,194 @@ def gearbox(bell_c, bell_z0, bell_r, case_c, case_s, end_z, diff_c=None, pockets
         a = k * 2 * math.pi / 8
         bolts = bolts.union(cq.Workplane('XY').polygon(6, 0.010).extrude(0.006).translate((cx + math.cos(a) * (sx / 2 - 0.035), cy + math.sin(a) * (sy / 2 - 0.035), end_z + 0.011)))
     return [('alu', g), ('aluDark', cover.union(tower)), ('steel', bolts)]
+
+
+# ---------- cabeçote, tampa de válvulas, coletores e cárter (nas coordenadas de cada carro) ----------
+
+def cyl_between(r, p0, p1):
+    a, b = cq.Vector(*p0), cq.Vector(*p1)
+    return cq.Workplane('XY').add(cq.Solid.makeCylinder(r, (b - a).Length, a, (b - a).normalized()))
+
+
+def swept(pts, r):
+    """Tubo de raio r ao longo de uma curva suave pelos pontos (a mesma ideia dos tubos do app)."""
+    path = cq.Wire.assembleEdges([cq.Edge.makeSpline([cq.Vector(*p) for p in pts])])
+    t = path.tangentAt(0)
+    ref = cq.Vector(0, 0, 1) if abs(t.z) < 0.9 else cq.Vector(1, 0, 0)
+    plane = cq.Plane(origin=cq.Vector(*pts[0]), xDir=t.cross(ref).normalized(), normal=t)
+    return cq.Workplane(plane).circle(r).sweep(cq.Workplane('XY').add(path), transition='round')
+
+
+def cylinder_head(c, size, cyl_z, ex_dir, port_y, in_y=None, ends=(), wells=(), eye=None):
+    """Cabeçote: base (deck) e trilho da tampa mais largos que o miolo, nervuras entre os cilindros nas duas faces,
+    ressalto de cada janela de escape, faixa da flange de admissão, ressaltos nas pontas (saída d'água, sensores,
+    suportes) e olhal de içamento. ex_dir = +1 se o escape fica em +x."""
+    cx, cy, cz = c
+    sx, sy, sz = size
+    top, bot = cy + sy / 2, cy - sy / 2
+    deck = safe_fillet(box(cx, bot + 0.009, cz, sx, 0.018, sz), '|Y', 0.006)
+    core = safe_fillet(box(cx, cy, cz, sx - 0.016, sy - 0.004, sz - 0.008), '|Y', 0.01)
+    rail = safe_fillet(box(cx, top - 0.008, cz, sx, 0.016, sz), '|Y', 0.008)
+    h = deck.union(core).union(rail)
+    zs = sorted(cyl_z)
+    ribs = [(zs[i] + zs[i + 1]) / 2 for i in range(len(zs) - 1)] + [cz - sz / 2 + 0.02, cz + sz / 2 - 0.02]
+    for face in (1, -1):
+        xf = cx + face * (sx / 2 - 0.008)
+        for zm in ribs:
+            h = h.union(box(xf + face * 0.004, cy, zm, 0.008, sy - 0.02, 0.01))
+    xe, xi = cx + ex_dir * sx / 2, cx - ex_dir * sx / 2
+    for z in zs:
+        h = h.union(safe_fillet(box(xe + ex_dir * 0.002, port_y, z, 0.004, 0.046, 0.052), '|X', 0.01))
+    span = zs[-1] - zs[0] + 0.08
+    h = h.union(safe_fillet(box(xi - ex_dir * 0.002, port_y if in_y is None else in_y, (zs[0] + zs[-1]) / 2, 0.004, 0.056, span), '|X', 0.012))
+    for e in ends:
+        if e[0] == 'cyl':
+            _, x, y, z0, z1, r = e
+            h = h.union(cyl(r, z0, z1, x, y))
+        else:
+            h = h.union(safe_fillet(box(*e[1:]), '|Z', 0.006))
+    for (p0, p1, r) in wells:
+        h = h.cut(cyl_between(r, p0, p1))
+    if eye:
+        x, ze, d = eye
+        pl = safe_fillet(box(x, top + 0.016, ze + d * 0.003, 0.04, 0.048, 0.006), '|Z', 0.014)
+        h = h.union(pl.cut(cyl(0.009, ze - 0.01, ze + 0.02, x, top + 0.026)))
+    return [('alu', h)]
+
+
+def valve_cover(c, size, mat, wells=(), well_r=0.015, towers=(), bosses=(), filler=None, ribs=(), nipples=(), r_top=0.02):
+    """Tampa de válvulas: aba de vedação, casco com cantos arredondados, torres e ressaltos dos parafusos,
+    poços das bobinas ou cabos, nervuras, gargalo do óleo e bico do respiro."""
+    cx, cy, cz = c
+    sx, sy, sz = size
+    top, bot = cy + sy / 2, cy - sy / 2
+    fl = safe_fillet(box(cx, bot + 0.004, cz, sx, 0.008, sz), '|Y', 0.022)
+    sh = safe_fillet(box(cx, cy + 0.003, cz, sx - 0.012, sy - 0.006, sz - 0.012), '|Y', 0.02)
+    sh = safe_fillet(sh, '>Y', r_top)
+    v = fl.union(sh)
+    for (x, z) in towers:
+        v = v.union(cyl_y(0.0095, bot + 0.006, top - 0.002, x, z))
+    for (x, z) in bosses:
+        v = v.union(cyl_y(0.009, top - 0.004, top + 0.002, x, z))
+    for b in ribs:
+        v = v.union(safe_fillet(box(*b), '|Y', min(b[3], b[5]) * 0.45))
+    if filler:
+        x, z, r, y1 = filler
+        v = v.union(cyl_y(r, top - 0.008, y1, x, z))
+    for (p0, p1, r) in nipples:
+        v = v.union(cyl_between(r, p0, p1))
+    for (x, z) in wells:
+        v = v.union(cyl_y(well_r + 0.006, top - 0.006, top + 0.003, x, z))
+        v = v.cut(cyl_y(well_r, top - 0.05, top + 0.01, x, z))
+    return [(mat, v)]
+
+
+def intake_manifold(runners, r, plenum, flange, mat, neck=None, tb=None, bosses=(), ribs=()):
+    """Coletor de admissão: plenum, um duto curvo por cilindro, flange no cabeçote, pescoço e flange da borboleta,
+    ressaltos dos bicos e bicos da partida a frio, nervuras do plástico."""
+    pc, ps, pf = plenum
+    m = safe_fillet(box(*pc, *ps), '|Z', pf)
+    for pts in runners:
+        m = m.union(swept(pts, r))
+    if neck:
+        m = m.union(swept(*neck))
+    x0, x1, y0, y1, z0, z1 = flange
+    m = m.union(safe_fillet(box((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, abs(x1 - x0), y1 - y0, z1 - z0), '|X', 0.01))
+    if tb:
+        b, sel = tb
+        m = m.union(safe_fillet(box(*b), sel, 0.012))
+    for (p0, p1, rb) in bosses:
+        m = m.union(cyl_between(rb, p0, p1))
+    for b in ribs:
+        m = m.union(box(*b))
+    return [(mat, m)]
+
+
+def exhaust_manifold(prims, r, flange, ears, collector, outlet, boss=None):
+    """Coletor de escape: um tubo por cilindro até o coletor, flange inteiriça com orelhas nos prisioneiros,
+    ressalto da sonda lambda e flange de três furos que encosta no catalisador, com prisioneiros e porcas."""
+    m = None
+    for pts in prims:
+        s = swept(pts, r)
+        m = s if m is None else m.union(s)
+    p0, p1, rc = collector
+    m = m.union(cyl_between(rc, p0, p1))
+    x0, x1, y0, y1, z0, z1 = flange
+    fl = safe_fillet(box((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, abs(x1 - x0), y1 - y0, z1 - z0), '|X', 0.008)
+    for (a, b, re) in ears:
+        fl = fl.union(cyl_between(re, a, b))
+    m = m.union(fl)
+    if boss:
+        bp0, bp1, br = boss
+        m = m.union(cyl_between(br, bp0, bp1))
+    ox, oy, oz, od, flip = outlet
+    a0 = math.pi if flip else 0.0
+    tri = [(ox + math.cos(a0 + k * 2 * math.pi / 3) * od / 2, oz + math.sin(a0 + k * 2 * math.pi / 3) * od / 2) for k in range(3)]
+    of = cq.Workplane('XZ').workplane(offset=-oy).polyline(tri).close().extrude(-0.008)
+    m = m.union(safe_fillet(of, '|Y', 0.012))
+    studs = cq.Workplane('XY')
+    for (tx, tz) in tri:
+        sx_, sz_ = ox + (tx - ox) * 0.62, oz + (tz - oz) * 0.62
+        studs = studs.union(cyl_y(0.004, oy - 0.012, oy + 0.016, sx_, sz_)).union(
+            cq.Workplane('XZ').workplane(offset=-(oy + 0.008)).center(sx_, sz_).polygon(6, 0.012).extrude(-0.006))
+    return [('exhaust', m), ('steel', studs)]
+
+
+def heat_shield(x_in, x_out, y_top, y_bot, z0, z1, ribs=(), bend=0.018, t=0.0015, tabs=()):
+    """Protetor de calor de chapa: tampo sobre o coletor e aba descendo do lado de fora, com dobra arredondada,
+    frisos estampados e as orelhas de fixação perto do cabeçote."""
+    d = 1 if x_out > x_in else -1
+
+    def sheet(to, ti, za, zb):
+        cxa, cya = x_out - d * bend, y_top - bend
+        ro, ri = bend + to, bend - ti
+        k = 0.70710678
+        w = (cq.Workplane('XY').workplane(offset=za)
+             .moveTo(x_in, y_top + to).lineTo(cxa, y_top + to)
+             .threePointArc((cxa + d * ro * k, cya + ro * k), (x_out + d * to, cya))
+             .lineTo(x_out + d * to, y_bot).lineTo(x_out - d * ti, y_bot).lineTo(x_out - d * ti, cya)
+             .threePointArc((cxa + d * ri * k, cya + ri * k), (cxa, y_top - ti))
+             .lineTo(x_in, y_top - ti).close())
+        return w.extrude(zb - za)
+    s = sheet(t / 2, t / 2, z0, z1)
+    for zr in ribs:
+        s = s.union(sheet(t / 2 + 0.0022, t / 2, zr - 0.005, zr + 0.005))
+    for zt in tabs:
+        s = s.union(box(x_in + d * 0.004, y_top - 0.011, zt, 0.008, 0.022, 0.018).cut(cyl_x(0.0035, x_in - 0.01, x_in + 0.02, y_top - 0.014, zt)))
+    return [('aluDark', s)]
+
+
+def oil_pan(c, size, depth, mat, taper=6.0, flange=(0.01, 0.01, 0.008), sump=None, drain=None, beads=(), ribs=0):
+    """Cárter: aba de vedação, corpo com inclinação de molde (e poço mais fundo onde fica o bujão), frisos
+    estampados (chapa) ou nervuras (alumínio fundido) e o ressalto do bujão."""
+    cx, ytop, cz = c
+    sx, sz = size
+    fwx, fwz, ft = flange
+    p = safe_fillet(box(cx, ytop - ft / 2, cz, sx + 2 * fwx, ft, sz + 2 * fwz), '|Y', 0.014)
+    tg = math.tan(math.radians(taper))
+
+    def tapered(xc, zc, wx, wz, dep):
+        pl = cq.Plane(origin=(xc, ytop - ft + 0.001, zc), xDir=(1, 0, 0), normal=(0, -1, 0))
+        w = cq.Workplane(pl).rect(wx, wz).extrude(dep - ft + 0.001, taper=taper)
+        return safe_fillet(w, 'not >Y', 0.008)
+    shallow = depth if not sump else sump[2]
+    p = p.union(tapered(cx, cz, sx, sz, shallow))
+    if sump:   # o poço é arredondado antes de juntar (o arredondamento da peça inteira falha na emenda)
+        za, zb, _ = sump
+        p = p.union(tapered(cx, (za + zb) / 2, sx - 2 * tg * 0.01, zb - za, depth))
+    for yb in beads:   # friso em volta, acompanhando a inclinação
+        sh = (ytop - ft - yb) * tg
+        ring = box(cx, yb, cz, sx - 2 * sh + 0.006, 0.006, sz - 2 * sh + 0.006).cut(box(cx, yb, cz, sx - 2 * sh - 0.004, 0.01, sz - 2 * sh - 0.004))
+        p = p.union(ring)
+    if ribs:
+        hh = min(depth, shallow) * 0.8
+        sh = (ft + hh / 2) * tg
+        for k in range(ribs):
+            z = cz - sz / 2 + (k + 0.5) * sz / ribs
+            for sd in (1, -1):
+                p = p.union(box(cx + sd * (sx / 2 - sh + 0.002), ytop - ft - hh / 2, z, 0.006, hh, 0.006))
+    if drain:
+        dx, dz = drain
+        yb = ytop - depth
+        p = p.union(cyl_y(0.016, yb - 0.004, yb + 0.008, dx, dz))
+    return [(mat, p)]

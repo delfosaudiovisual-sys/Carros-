@@ -35,8 +35,13 @@ detalhes do tipo de peça: alternador com polia de 6 canais, aletas e orelhas de
 solenoide e bornes; compressor do ar com embreagem; disco ventilado (ou sólido) com chapéu e furos; pinça com ponte,
 dedos, pinos-guia e sangrador; pastilhas em arco; bateria com tampa, bujões e polos; filtro de óleo com estrias;
 reservatórios soprados e tampas; catalisador com protetor de calor; silencioso oval; servo-freio; coifas sanfonadas;
-e, gerados nas medidas de cada carro, o bloco (cilindros marcados, nervuras, base do filtro) e o câmbio (capa da
-embreagem, nervuras, encaixe do motor de partida). Cada carro só posiciona, gira e escala a peça com `kit()`.
+e, gerados nas medidas de cada motor, o bloco (cilindros marcados, nervuras, base do filtro), o câmbio (capa da
+embreagem, nervuras, encaixe do motor de partida), o cabeçote (base e trilho da tampa, nervuras, ressaltos das
+janelas, saída d'água, olhal de içamento), a tampa de válvulas (torres dos parafusos, poços das bobinas, nervuras,
+gargalo do óleo, bico do respiro), o coletor de admissão (plenum, dutos curvos, flange, ressaltos dos bicos), o coletor
+de escape (tubos, flange com orelhas, ressalto da sonda, flange do catalisador), o protetor de calor estampado e o
+cárter (aba, poço, frisos ou nervuras, bujão). Cada carro só posiciona, gira e escala a peça com `kit()`; peças que
+servem de caminho nas animações (como os coletores) registram o trajeto com `route()`.
 
 ```sh
 pip install cadquery                 # uma vez
@@ -44,8 +49,8 @@ python tools/kit/build.py            # gera src/kit/kit.data.js (todas as peças
 python tools/kit/build.py caliper    # refaz só as peças citadas e mantém as outras
 ```
 
-As malhas vão quantizadas em 16 bits e comprimidas com gzip dentro da página (cerca de 280 KB); o navegador
-descomprime ao abrir. As mangueiras de borracha ganham abraçadeiras nas duas pontas automaticamente.
+As malhas vão quantizadas em 16 bits, guardadas como diferenças e comprimidas com gzip dentro da página (cerca de
+400 KB); o navegador descomprime ao abrir. As mangueiras de borracha ganham abraçadeiras nas duas pontas automaticamente.
 
 ## Como gerar a página
 

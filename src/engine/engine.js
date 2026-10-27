@@ -232,6 +232,8 @@ function tube(id, pts, r, mat, closed, parent, seg, rad) {
   if (mat === MAT.hose && r >= 0.0075 && !closed && pts.length > 1) hoseClamps(id, pts, r, parent);
   return m;
 }
+/* só o caminho, para as animações, quando a peça vem pronta do CAD */
+function route(id, pts) { (ROUTES[id] = ROUTES[id] || []).push(pts); }
 /* abraçadeira nas duas pontas de cada mangueira: cinta de aço e o caracol do parafuso */
 function hoseClamps(id, pts, r, parent) {
   const c = curveOf(pts, false), L = c.getLength(); if (L < 0.04) return;
@@ -1160,7 +1162,7 @@ function initScene(canvas) {
   const ao = AO = new THREE.Mesh(new THREE.PlaneGeometry(carL * 1.2, carW * 1.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
   ao.rotation.x = -Math.PI / 2; ao.position.y = 0.002; scene.add(ao);
   carRoot = new THREE.Group(); scene.add(carRoot);  // montado com +z = lado do motorista; espelhado abaixo para ficar mão esquerda
-  const K = { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, kit, pivotOf, box, cyl, tube, rod, sph, spring, ribbon, beltPath, plateFromHull,
+  const K = { THREE, V, TAU, UPY, S, MAT, std, phy, reg, tag, place, add, kit, pivotOf, box, cyl, tube, route, rod, sph, spring, ribbon, beltPath, plateFromHull,
     gBox, gCyl, gLathe, gTorus, gTube, curveOf, setBar, mono, makeBody, art, ANIM, WHEELS, ROUTES, REG, lerp3 };
   GEO = (CAR.geometry || (window.CAR_GEO || {})[CAR.id])(K);
   GEO.build(); finishDetails(); buildFasteners();

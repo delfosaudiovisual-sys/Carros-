@@ -1,5 +1,5 @@
 /* ===== Peças em CAD: descompressão e montagem das geometrias =====
-   kit.data.js traz as malhas quantizadas e comprimidas (gerado por tools/kit/build.py). Aqui o bloco é
+   kit.data.js traz as malhas quantizadas, em diferenças e comprimidas (gerado por tools/kit/build.py). Aqui o bloco é
    descomprimido uma vez ao abrir a página; cada peça vira BufferGeometry na primeira vez que um carro a pede
    e fica guardada para os outros carros. Sem DecompressionStream, cada malha cai para a caixa que a envolve. */
 const KITD = window.CAR_KIT || null;
@@ -38,12 +38,14 @@ window.kitGeometry = function (name) {
   const out = it.sub.map((sb, k) => {
     let g;
     if (KITBUF) {
-      const q = new Uint16Array(KITBUF, sb.v, sb.nv * 3), pos = new Float32Array(sb.nv * 3);
-      for (let i = 0; i < sb.nv; i++) for (let c = 0; c < 3; c++) pos[i * 3 + c] = it.min[c] + q[i * 3 + c] / 65535 * it.size[c];
-      const I = sb.w ? new Uint32Array(KITBUF, sb.i, sb.nt * 3) : new Uint16Array(KITBUF, sb.i, sb.nt * 3);
+      // posições e índices vêm em diferenças (x de todos os vértices, depois y, depois z): soma acumulada
+      const n = sb.nv, q = new Uint16Array(KITBUF, sb.v, n * 3), pos = new Float32Array(n * 3);
+      for (let c = 0; c < 3; c++) { let a = 0; for (let i = 0; i < n; i++) { a = (a + q[c * n + i]) & 0xffff; pos[i * 3 + c] = it.min[c] + a / 65535 * it.size[c]; } }
+      const D = sb.w ? new Uint32Array(KITBUF, sb.i, sb.nt * 3) : new Uint16Array(KITBUF, sb.i, sb.nt * 3), I = sb.w ? new Uint32Array(D.length) : new Uint16Array(D.length);
+      for (let i = 0, a = 0; i < D.length; i++) { a = sb.w ? (a + D[i]) >>> 0 : (a + D[i]) & 0xffff; I[i] = a; }
       g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-      g.setIndex(new THREE.BufferAttribute(I.slice(), 1));
+      g.setIndex(new THREE.BufferAttribute(I, 1));
       g.computeVertexNormals();
     } else {
       g = k ? new THREE.BufferGeometry() : new THREE.BoxGeometry(it.size[0], it.size[1], it.size[2]).translate(it.min[0] + it.size[0] / 2, it.min[1] + it.size[1] / 2, it.min[2] + it.size[2] / 2);
