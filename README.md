@@ -40,8 +40,14 @@ embreagem, nervuras, encaixe do motor de partida), o cabeçote (base e trilho da
 janelas, saída d'água, olhal de içamento), a tampa de válvulas (torres dos parafusos, poços das bobinas, nervuras,
 gargalo do óleo, bico do respiro), o coletor de admissão (plenum, dutos curvos, flange, ressaltos dos bicos), o coletor
 de escape (tubos, flange com orelhas, ressalto da sonda, flange do catalisador), o protetor de calor estampado e o
-cárter (aba, poço, frisos ou nervuras, bujão). Cada carro só posiciona, gira e escala a peça com `kit()`; peças que
-servem de caminho nas animações (como os coletores) registram o trajeto com `route()`.
+cárter (aba, poço, frisos ou nervuras, bujão). Na suspensão e na direção: amortecedor McPherson (garra de dois
+parafusos, pratos da mola, coifa, suporte da bieleta), coxim superior com prisioneiros, manga de eixo (alojamento do
+rolamento, braço de direção, orelhas da pinça), bandeja estampada com pivô e buchas, bieleta, caixa de direção (torre do
+pinhão, abraçadeiras, coifas; cilindro de assistência nas hidráulicas), eixo traseiro de torção ou braço arrastado
+(206), braços e manga traseira do Civic e os amortecedores traseiros. Peças de um lado só são desenhadas no lado
+esquerdo e espelhadas no direito (`kit(..., { s: [1, 1, -1] })` desvira os triângulos). Cada carro só posiciona, gira
+e escala a peça com `kit()`; peças que servem de caminho nas animações (como os coletores) registram o trajeto com
+`route()`.
 
 ```sh
 pip install cadquery                 # uma vez
@@ -50,7 +56,7 @@ python tools/kit/build.py caliper    # refaz só as peças citadas e mantém as 
 ```
 
 As malhas vão quantizadas em 16 bits, guardadas como diferenças e comprimidas com gzip dentro da página (cerca de
-400 KB); o navegador descomprime ao abrir. As mangueiras de borracha ganham abraçadeiras nas duas pontas automaticamente.
+680 KB); o navegador descomprime ao abrir. As mangueiras de borracha ganham abraçadeiras nas duas pontas automaticamente.
 
 ## Como gerar a página
 

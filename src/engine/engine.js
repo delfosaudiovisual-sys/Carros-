@@ -116,11 +116,19 @@ function kit(id, name, o) {
   const parts = window.kitGeometry ? window.kitGeometry(name) : null;
   if (!parts) { console.warn('peça de CAD inexistente: ' + name); return []; }
   const s = o.s == null ? null : (Array.isArray(o.s) ? o.s : [o.s, o.s, o.s]);
+  const mir = s && s[0] * s[1] * s[2] < 0;          // espelhada (lado direito): a escala vai para a geometria
   return parts.map(p => {
-    const m = add(id, p.geo, (o.mats && o.mats[p.m]) || MAT[p.m] || MAT.steel, o.at || [0, 0, 0], o.rot || null, o.parent);
-    if (s) m.scale.set(s[0], s[1], s[2]);
+    const m = add(id, mir ? mirroredGeo(p.geo, s) : p.geo, (o.mats && o.mats[p.m]) || MAT[p.m] || MAT.steel, o.at || [0, 0, 0], o.rot || null, o.parent);
+    if (s && !mir) m.scale.set(s[0], s[1], s[2]);
     return m;
   });
+}
+/* cópia espelhada com os triângulos desvirados, para a face de fora continuar de fora (e o clique funcionar) */
+function mirroredGeo(g, s) {
+  const c = g.clone().scale(s[0], s[1], s[2]), I = c.index.array;
+  for (let i = 0; i < I.length; i += 3) { const t = I[i + 1]; I[i + 1] = I[i + 2]; I[i + 2] = t; }
+  c.computeVertexNormals();
+  return c;
 }
 function pivotOf(id, p) {
   const g = new THREE.Group(); g.position.set(p[0], p[1], p[2]);

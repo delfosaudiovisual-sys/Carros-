@@ -9,15 +9,19 @@ import math
 import cadquery as cq
 
 
-def lathe(pts):
-    """Sólido de revolução em torno do eixo z; pts = [(raio, z), ...] fechando o perfil (pontos repetidos são ignorados)."""
+def _clean(pts):
     q = [pts[0]]
     for p in pts[1:]:
         if abs(p[0] - q[-1][0]) > 1e-7 or abs(p[1] - q[-1][1]) > 1e-7:
             q.append(p)
     if len(q) > 2 and abs(q[0][0] - q[-1][0]) < 1e-7 and abs(q[0][1] - q[-1][1]) < 1e-7:
         q.pop()
-    return cq.Workplane('XZ').polyline(q).close().revolve(360, (0, 0, 0), (0, 1, 0))
+    return q
+
+
+def lathe(pts):
+    """Sólido de revolução em torno do eixo z; pts = [(raio, z), ...] fechando o perfil (pontos repetidos são ignorados)."""
+    return cq.Workplane('XZ').polyline(_clean(pts)).close().revolve(360, (0, 0, 0), (0, 1, 0))
 
 
 def cyl(r, z0, z1, x=0.0, y=0.0):
@@ -577,3 +581,302 @@ def oil_pan(c, size, depth, mat, taper=6.0, flange=(0.01, 0.01, 0.008), sump=Non
         yb = ytop - depth
         p = p.union(cyl_y(0.016, yb - 0.004, yb + 0.008, dx, dz))
     return [(mat, p)]
+
+
+# ---------- suspensão e direção (nas coordenadas de cada carro, lado esquerdo; o direito é espelhado no app) ----------
+
+def frame(origin, axis, ref=(1, 0, 0)):
+    """Plano com y local = eixo, x local o mais perto possível de ref e z = x × eixo."""
+    a = cq.Vector(*axis).normalized()
+    r = cq.Vector(*ref)
+    if abs(r.dot(a)) > 0.95:
+        r = cq.Vector(0, 0, 1)
+    x = (r - a * r.dot(a)).normalized()
+    return cq.Plane(origin=cq.Vector(*origin), xDir=x, normal=x.cross(a))
+
+
+def lathe_at(pts, origin, axis, ref=(1, 0, 0)):
+    """Revolução de pts = [(raio, altura)] em torno do eixo que sai de origin na direção axis."""
+    return cq.Workplane(frame(origin, axis, ref)).polyline(_clean(pts)).close().revolve(360, (0, 0, 0), (0, 1, 0))
+
+
+def lbox(pl, c, size):
+    """Caixa no sistema local do plano (x, y = eixo, z)."""
+    return cq.Workplane(pl).transformed(offset=c).box(*size)
+
+
+def bar(p0, p1, w, h, up=(0, 1, 0), r=0.005):
+    """Barra de seção retangular de cantos arredondados entre dois pontos; h na direção de up, w na transversal."""
+    A = cq.Vector(*p1) - cq.Vector(*p0)
+    a = A.normalized()
+    u = cq.Vector(*up)
+    u = (u - a * u.dot(a)).normalized()
+    pl = cq.Plane(origin=cq.Vector(*p0), xDir=a.cross(u), normal=a)
+    b = cq.Workplane(pl).rect(w, h).extrude(A.Length)
+    try:
+        b = b.edges(cq.selectors.ParallelDirSelector(a)).fillet(min(r, w * 0.45, h * 0.45))
+    except Exception:
+        pass
+    return b
+
+
+def plate3(pts, t):
+    """Chapa plana pelo polígono de pontos 3D (o plano sai dos três primeiros), com espessura t."""
+    P = [cq.Vector(*p) for p in pts]
+    n = (P[1] - P[0]).cross(P[2] - P[0]).normalized()
+    x = (P[1] - P[0]).normalized()
+    y = n.cross(x)
+    pl = cq.Plane(origin=P[0], xDir=x, normal=n)
+    loc = [((p - P[0]).dot(x), (p - P[0]).dot(y)) for p in P]
+    return cq.Workplane(pl).polyline(loc).close().extrude(t / 2, both=True)
+
+
+def bellows(ra, rb, h0, h1, n, amp=0.004):
+    """Perfil de sanfona (raio ra em h0 até rb em h1, n gomos) para lathe_at; fecha no eixo."""
+    pts = [(0.0, h0), (ra, h0)]
+    for k in range(n):
+        t0, t1 = k / n, (k + 1) / n
+        rp = ra + (rb - ra) * (t0 + t1) / 2
+        pts += [(rp + amp, h0 + (h1 - h0) * (t0 + t1) / 2), (ra + (rb - ra) * t1, h0 + (h1 - h0) * t1)]
+    pts += [(0.0, h1)]
+    return pts
+
+
+def strut(bot, top, r=0.026, body_to=0.53, seat_at=0.445, seat_r=0.085, top_seat=0.925, top_r=0.075, rod_r=0.011,
+          bolts_y=(0.41, 0.45), link=None):
+    """Amortecedor McPherson: tubo com fundo, garra de dois parafusos que abraça a manga (para fora), suporte da
+    bieleta, prato inferior da mola com aba, coifa sanfonada sobre a haste, prato superior e a haste cromada."""
+    B, T = cq.Vector(*bot), cq.Vector(*top)
+    A = T - B
+    L, a = A.Length, A.normalized()
+    pl = frame(bot, A)
+    xa, za = pl.xDir, pl.zDir
+    h = body_to * L
+    body = lathe_at([(0.0, -0.006), (r - 0.005, -0.006), (r, 0.0), (r, h), (r - 0.005, h + 0.006), (rod_r + 0.003, h + 0.009), (0.0, h + 0.009)], bot, A)
+    zl = 0.032
+    loc = [(yb - B.y - zl * za.y) / a.y for yb in bolts_y]
+    y0, y1 = min(loc) - 0.022, max(loc) + 0.024
+    for sx in (1, -1):
+        body = body.union(lbox(pl, (sx * 0.0215, (y0 + y1) / 2, 0.024), (0.005, y1 - y0, 0.05)))
+    for ly in loc:
+        c = B + a * ly + za * zl
+        body = body.union(cyl_between(0.009, (c - xa * 0.027).toTuple(), (c + xa * 0.027).toTuple()))
+    hs = seat_at * L
+    body = body.union(lathe_at([(r - 0.002, hs - 0.012), (r + 0.012, hs - 0.012), (seat_r - 0.008, hs - 0.004), (seat_r, hs + 0.006),
+                                (seat_r - 0.005, hs + 0.008), (seat_r - 0.011, hs + 0.002), (r - 0.002, hs + 0.002)], bot, A))
+    if link:   # aba da bieleta, atrás do tubo; o pino da bieleta passa por ela
+        P = cq.Vector(*link) - B
+        lx, ly, lz = P.dot(xa), P.dot(a), P.dot(za)
+        body = body.union(lbox(pl, (lx / 2, ly, lz - 0.026), (abs(lx) + 0.024, 0.032, 0.005)))
+    ht = top_seat * L
+    seat2 = lathe_at([(rod_r + 0.004, ht - 0.004), (top_r - 0.006, ht - 0.004), (top_r, ht + 0.002), (top_r - 0.004, ht + 0.006), (rod_r + 0.004, ht + 0.006)], bot, A)
+    boot = lathe_at(bellows(0.022, 0.017, h + 0.006, ht - 0.03, 9, 0.003), bot, A)
+    rod = lathe_at([(0.0, h), (rod_r, h), (rod_r, L), (0.0, L)], bot, A)
+    return [('steelDark', body.union(seat2)), ('rubber', boot), ('chrome', rod)]
+
+
+def strut_mount(bot, top, studs, f0=0.93, f1=0.985, r=0.06):
+    """Coxim superior: borracha, rolamento, chapa de apoio com os prisioneiros (pontos dados) e a porca da haste."""
+    B, T = cq.Vector(*bot), cq.Vector(*top)
+    A = T - B
+    L = A.Length
+    h0, h1 = f0 * L, f1 * L
+    rub = lathe_at([(0.0, h0), (r - 0.01, h0), (r, h0 + 0.01), (r - 0.004, h1 - 0.006), (0.0, h1 - 0.006)], bot, A)
+    ring = lathe_at([(r * 0.62, h0 + 0.012), (r * 0.86, h0 + 0.012), (r * 0.86, h0 + 0.022), (r * 0.62, h0 + 0.022)], bot, A)
+    plate = lathe_at([(0.0, h1 - 0.007), (r + 0.006, h1 - 0.007), (r + 0.006, h1 - 0.001), (0.0, h1 - 0.001)], bot, A)
+    nut = cq.Workplane(frame(top, A)).transformed(offset=(0, h1 - L - 0.001, 0), rotate=(-90, 0, 0)).polygon(6, 0.022).extrude(0.012)
+    st = cq.Workplane('XY')
+    for p in studs:
+        q = cq.Vector(*p)
+        st = st.union(cyl_y(0.005, q.y - 0.03, q.y + 0.004, q.x, q.z))
+    return [('rubber', rub), ('steel', ring.union(st)), ('steelDark', plate.union(nut))]
+
+
+def knuckle(wc, z0, z1, upper, bj, sa0, sa1, ears=(), abs_boss=None, bore=0.024, r=0.05):
+    """Manga de eixo (fundida): alojamento do rolamento, braço que sobe até a garra do amortecedor, braço até o pivô
+    da bandeja (com o parafuso de aperto), braço de direção com o olhal do terminal, orelhas do suporte da pinça
+    e ressalto do sensor do ABS."""
+    wx, wy = wc
+    zm = (z0 + z1) / 2
+    k = cyl(r, z0, z1, wx, wy)
+    k = k.union(bar((wx, wy + 0.02, zm), upper, 0.034, 0.028, up=(0, 0, 1), r=0.008))
+    bx, by, bz = bj
+    k = k.union(bar((wx, wy - 0.02, zm), (bx, by + 0.055, bz), 0.04, 0.03, up=(0, 0, 1), r=0.008))
+    k = k.union(cyl_y(0.021, by + 0.03, by + 0.062, bx, bz))
+    k = k.union(cyl_x(0.008, bx - 0.026, bx + 0.026, by + 0.046, bz + 0.018))
+    k = k.union(bar(sa0, sa1, 0.03, 0.022, up=(0, 1, 0), r=0.007))
+    ex, ey, ez = sa1
+    k = k.union(cyl_y(0.016, ey - 0.015, ey + 0.015, ex, ez).cut(cyl_y(0.0065, ey - 0.03, ey + 0.03, ex, ez)))
+    for (x, y, za, zb) in ears:
+        k = k.union(cyl(0.013, za, zb, x, y)).union(bar((wx, wy, (za + zb) / 2), (x, y, (za + zb) / 2), 0.026, 0.018, up=(0, 0, 1), r=0.006))
+    if abs_boss:
+        x, y, z = abs_boss
+        k = k.union(cyl_y(0.012, y - 0.016, y + 0.008, x, z)).union(bar((wx, wy, z), (x, y - 0.008, z), 0.02, 0.016, up=(0, 0, 1), r=0.005))
+    k = k.cut(cyl(bore, z0 - 0.01, z1 + 0.01, wx, wy))
+    return [('iron', k)]
+
+
+def lower_arm(bj, F, R, w=0.045, h=0.022):
+    """Bandeja de chapa estampada em L: duas pernas de seção fechada, alma com furo de alívio, caixa do pivô com
+    coifa e pino, bucha dianteira (eixo x) em olhal e bucha traseira vertical em copo."""
+    arm = bar(bj, F, w, h).union(bar(bj, R, w, h))
+    c = [(bj[i] * 0.5 + F[i] * 0.25 + R[i] * 0.25) for i in range(3)]
+    web = plate3([[bj[i] * 0.78 + F[i] * 0.22 for i in range(3)], [F[i] * 0.86 + bj[i] * 0.14 for i in range(3)],
+                  [R[i] * 0.86 + bj[i] * 0.14 for i in range(3)], [bj[i] * 0.78 + R[i] * 0.22 for i in range(3)]], 0.004)
+    web = web.cut(cyl_y(0.024, c[1] - 0.05, c[1] + 0.05, c[0], c[2]))
+    bx, by, bz = bj
+    house = cyl_y(0.027, by - 0.012, by + 0.012, bx, bz)
+    arm = arm.union(web).union(house)
+    fx, fy, fz = F
+    eye = cyl_x(0.027, fx - 0.026, fx + 0.026, fy, fz)
+    rx, ry, rz = R
+    cup = cyl_y(0.037, ry - 0.012, ry + 0.012, rx, rz)
+    arm = arm.union(eye).union(cup)
+    boot = cq.Workplane('XZ').workplane(offset=-(by + 0.012)).center(bx, bz).circle(0.022).workplane(offset=-0.022).circle(0.011).loft()
+    rub = cyl_x(0.02, fx - 0.029, fx + 0.029, fy, fz).union(cyl_y(0.033, ry - 0.024, ry + 0.023, rx, rz)).union(boot)
+    pin = cyl_x(0.009, fx - 0.035, fx + 0.035, fy, fz).union(cyl_y(0.009, ry - 0.03, ry + 0.03, rx, rz)).union(cyl_y(0.008, by + 0.03, by + 0.05, bx, bz))
+    return [('steelDark', arm), ('rubber', rub), ('steel', pin)]
+
+
+def stab_link(p0, p1, r=0.006):
+    """Bieleta da barra estabilizadora: haste, as duas caixas de articulação com coifa e os pinos."""
+    P0, P1 = cq.Vector(*p0), cq.Vector(*p1)
+    a = (P1 - P0).normalized()
+    e0, e1 = P0 + a * 0.012, P1 - a * 0.012
+    rod = cyl_between(r, e0.toTuple(), e1.toTuple())
+    hs = cyl(0.013, p0[2] - 0.011, p0[2] + 0.011, p0[0], p0[1]).union(cyl(0.013, p1[2] - 0.011, p1[2] + 0.011, p1[0], p1[1]))
+    boots = cyl(0.01, p0[2] - 0.02, p0[2] - 0.011, p0[0], p0[1]).union(cyl(0.01, p1[2] - 0.02, p1[2] - 0.011, p1[0], p1[1]))
+    pins = cyl(0.005, p0[2] - 0.034, p0[2] - 0.02, p0[0], p0[1]).union(cyl(0.005, p1[2] - 0.034, p1[2] - 0.02, p1[0], p1[1]))
+    eye = cyl(0.016, p0[2] - 0.04, p0[2] - 0.032, p0[0], p0[1])
+    return [('steel', rod.union(pins)), ('steelDark', hs.union(eye)), ('rubber', boots)]
+
+
+def steering_rack(c, half, pinion_z, clamps, boot, r=0.026, hyd=None, valve=None):
+    """Caixa de direção: tubo da cremalheira com as pontas reforçadas, torre do pinhão com o eixo estriado, corpo da
+    válvula (hidráulica) ou do pinhão, cilindro de assistência, abraçadeiras de fixação com coxim e as coifas."""
+    cx, cy = c
+    h = cyl(r, -half, half, cx, cy)
+    for sd in (1, -1):
+        h = h.union(cyl(r + 0.005, sd * half - (0.025 if sd > 0 else 0), sd * half + (0 if sd > 0 else 0.025), cx, cy))
+    tw = cyl_y(0.03, cy - 0.005, cy + 0.085, cx, pinion_z).union(cyl_y(0.034, cy + 0.07, cy + 0.085, cx, pinion_z))
+    body = safe_fillet(box(cx, cy + 0.015, pinion_z - 0.055, 0.05, 0.04, 0.07), '|Z', 0.01)
+    if valve:
+        body = body.union(cyl_y(0.024, cy + 0.03, cy + 0.06, cx, pinion_z - 0.06))
+    h = h.union(tw).union(body)
+    if hyd:
+        z0, z1, rh = hyd
+        h = h.union(cyl(rh, z0, z1, cx, cy)).union(cyl(rh + 0.004, z0, z0 + 0.012, cx, cy)).union(cyl(rh + 0.004, z1 - 0.012, z1, cx, cy))
+    shaft = cyl_y(0.011, cy + 0.085, cy + 0.11, cx, pinion_z)
+    clamp_m = cq.Workplane('XY')
+    rub = cq.Workplane('XY')
+    for z in clamps:
+        band = cq.Workplane('XY').workplane(offset=z - 0.02).center(cx, cy).circle(r + 0.012).circle(r + 0.006).extrude(0.04).intersect(box(cx, cy + 0.02, z, 0.1, 0.05, 0.05))
+        ears = box(cx, cy + 0.028, z, 0.09, 0.006, 0.04)
+        clamp_m = clamp_m.union(band).union(ears)
+        rub = rub.union(cyl(r + 0.006, z - 0.018, z + 0.018, cx, cy).cut(cyl(r, z - 0.03, z + 0.03, cx, cy)))
+    b0, b1 = boot
+    for sd in (1, -1):
+        prof = bellows(r + 0.004, 0.012, 0.0, b1 - b0, 7, 0.005)
+        rub = rub.union(lathe_at(prof, (cx, cy, sd * b0), (0, 0, sd)))
+    return [('alu', h), ('steel', shaft), ('steelDark', clamp_m), ('rubber', rub)]
+
+
+def shock(bot, top, r=0.024, body_to=0.55, rod_r=0.0095, cover=True, eye_bot=None, plate_top=None, seats=None, stud=0.0):
+    """Amortecedor traseiro: tubo, guarda-pó sobre a haste, haste cromada, fixação de baixo (olhal com bucha ou
+    pino com coxins) e chapa de cima com os furos dos parafusos."""
+    B, T = cq.Vector(*bot), cq.Vector(*top)
+    A = T - B
+    L = A.Length
+    h = body_to * L
+    body = lathe_at([(0.0, 0.0), (r - 0.004, 0.0), (r, 0.006), (r, h), (r - 0.004, h + 0.005), (0.0, h + 0.005)], bot, A)
+    rod = lathe_at([(0.0, h), (rod_r, h), (rod_r, L), (0.0, L)], bot, A)
+    if stud:   # pino roscado na ponta de cima, com a arruela
+        rod = rod.union(lathe_at([(0.0, L), (0.006, L), (0.006, L + stud), (0.0, L + stud)], bot, A))
+    parts = [('steelDark', body), ('chrome', rod)]
+    if cover:
+        parts.append(('black', lathe_at([(r + 0.002, h + 0.02), (r + 0.006, h + 0.02), (r + 0.006, L * 0.9), (rod_r + 0.003, L * 0.9 + 0.01), (rod_r + 0.003, L * 0.9 + 0.004), (r + 0.002, L * 0.9 - 0.004)], bot, A)))
+    rub = cq.Workplane('XY')
+    if eye_bot == 'z':
+        parts[0] = ('steelDark', body.union(cyl(0.017, bot[2] - 0.022, bot[2] + 0.022, bot[0], bot[1])))
+        rub = rub.union(cyl(0.012, bot[2] - 0.024, bot[2] + 0.024, bot[0], bot[1]))
+    elif eye_bot == 'y':
+        rub = rub.union(cyl_y(0.02, bot[1] - 0.024, bot[1] - 0.004, bot[0], bot[2]))
+    if seats:   # amortecedor com a mola em volta (pratos de baixo e de cima)
+        (f0, r0), (f1, r1) = seats
+        parts.append(('steelDark', lathe_at([(r, f0 * L - 0.006), (r0, f0 * L - 0.002), (r0, f0 * L + 0.004), (r, f0 * L + 0.002)], bot, A)
+                      .union(lathe_at([(rod_r + 0.004, f1 * L - 0.003), (r1, f1 * L - 0.003), (r1, f1 * L + 0.005), (rod_r + 0.004, f1 * L + 0.005)], bot, A))))
+    if plate_top:
+        (px, py, pz), (sx, sz) = plate_top
+        parts.append(('steel', safe_fillet(box(px, py, pz, sx, 0.006, sz), '|Y', 0.006)))
+    parts.append(('rubber', rub.union(lathe_at([(0.0, L - 0.018), (0.018, L - 0.018), (0.018, L - 0.006), (0.0, L - 0.006)], bot, A))))
+    return parts
+
+
+def torsion_beam(bu, hub, beam, spring, shock_b, half, arm=(0.045, 0.07)):
+    """Eixo traseiro de torção: braços longitudinais de seção caixão com olhal da bucha na frente, travessa em U
+    aberto para baixo (é ela que torce), pratos das molas, suportes de baixo dos amortecedores e flanges dos cubos."""
+    bx, by = beam
+    w, hh, t = 0.09, 0.07, 0.004
+    U = [(bx - w / 2, by - hh / 2), (bx - w / 2, by + hh / 2), (bx + w / 2, by + hh / 2), (bx + w / 2, by - hh / 2),
+         (bx + w / 2 - t, by - hh / 2), (bx + w / 2 - t, by + hh / 2 - t), (bx - w / 2 + t, by + hh / 2 - t), (bx - w / 2 + t, by - hh / 2)]
+    m = cq.Workplane('XY').workplane(offset=-half).polyline(U).close().extrude(2 * half)
+    for sd in (1, -1):
+        B = (bu[0], bu[1], sd * bu[2])
+        H = (hub[0], hub[1], sd * hub[2])
+        m = m.union(bar(B, H, arm[0], arm[1], r=0.012))
+        m = m.union(cyl(0.047, sd * bu[2] - 0.025, sd * bu[2] + 0.025, bu[0], bu[1]))
+        m = m.union(safe_fillet(box(hub[0], hub[1], sd * (hub[2] - 0.022), 0.13, 0.13, 0.008), '|Z', 0.03))
+        sx, sy, sz = spring
+        f = (sx - bu[0]) / (hub[0] - bu[0])   # onde o braço passa na altura do prato
+        za = bu[2] + (hub[2] - bu[2]) * f
+        m = m.union(lathe([(0.0, -0.004), (0.068, -0.004), (0.072, 0.006), (0.066, 0.008), (0.062, 0.002), (0.0, 0.002)]).rotate((0, 0, 0), (1, 0, 0), -90).translate((sx, sy, sd * sz)))
+        m = m.union(safe_fillet(box(sx, sy - 0.008, sd * (sz + za) / 2, 0.11, 0.012, za - sz), '|Y', 0.02))
+        hx, hy, hz = shock_b
+        zf = hub[2] - 0.022
+        m = m.union(safe_fillet(box(hx, hy - 0.014, sd * hz, 0.05, 0.006, 0.05), '|Y', 0.01))
+        m = m.union(box(hx + 0.02, (hy - 0.014 + hub[1]) / 2, sd * (hz - 0.022 + zf) / 2, 0.006, abs(hub[1] - hy + 0.014) + 0.01, zf - hz + 0.022))
+    return [('steelDark', m)]
+
+
+def trailing_arm(pivot, z0, z1, hub, hub_z, shock_b, shock_z, r=0.056):
+    """Braço arrastado (206): bossa do pivô em volta da travessa, braço fundido até o cubo, ponta de eixo e a
+    orelha de baixo do amortecedor."""
+    px, py = pivot
+    zm = (z0 + z1) / 2
+    m = cyl(r, z0, z1, px, py)
+    m = m.union(bar((px, py - 0.01, zm), (hub[0], hub[1], hub_z), 0.05, 0.075, r=0.014))
+    m = m.union(cyl(0.036, hub_z - 0.035, hub_z + 0.004, hub[0], hub[1]))
+    sx, sy = shock_b
+    m = m.union(bar((hub[0], hub[1] - 0.02, hub_z - 0.03), (sx, sy, shock_z - 0.015), 0.03, 0.03, up=(0, 0, 1), r=0.006))
+    m = m.union(cyl(0.018, shock_z - 0.03, shock_z + 0.008, sx, sy))
+    return [('steelDark', m)]
+
+
+def rear_knuckle(wc, z0, z1, bosses, bore=0.02):
+    """Manga traseira (Civic): alojamento do cubo e os ressaltos dos braços (pontos com eixo e raio), ligados por nervuras."""
+    wx, wy = wc
+    zm = (z0 + z1) / 2
+    k = cyl(0.045, z0, z1, wx, wy)
+    for (p, axis, rb, ln) in bosses:
+        x, y, z = p
+        k = k.union(bar((wx, wy, zm), (x, y, z), 0.03, 0.026, up=(0, 0, 1), r=0.007))
+        if axis == 'x':
+            k = k.union(cyl_x(rb, x - ln / 2, x + ln / 2, y, z))
+        elif axis == 'y':
+            k = k.union(cyl_y(rb, y - ln / 2, y + ln / 2, x, z))
+        else:
+            k = k.union(cyl(rb, z - ln / 2, z + ln / 2, x, y))
+    return [('iron', k.cut(cyl(bore, z0 - 0.01, z1 + 0.01, wx, wy)))]
+
+
+def link_arm(p0, p1, w, h, eyes, up=(0, 1, 0)):
+    """Braço de ligação com olhal de bucha em cada ponta; eyes = [(ponto, eixo, raio externo, comprimento)]."""
+    m = bar(p0, p1, w, h, up=up, r=0.006)
+    rub = cq.Workplane('XY')
+    for (p, axis, ro, ln) in eyes:
+        x, y, z = p
+        mk = {'x': lambda rr, l: cyl_x(rr, x - l / 2, x + l / 2, y, z), 'y': lambda rr, l: cyl_y(rr, y - l / 2, y + l / 2, x, z),
+              'z': lambda rr, l: cyl(rr, z - l / 2, z + l / 2, x, y)}[axis]
+        m = m.union(mk(ro, ln))
+        rub = rub.union(mk(ro - 0.006, ln + 0.006))
+    return [('steelDark', m), ('rubber', rub)]

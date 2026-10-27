@@ -589,24 +589,15 @@ function buildSuspensionBrakes() {
     const WF = WHEELS.find(w => w.front && w.s === s), WRr = WHEELS.find(w => !w.front && w.s === s);
     /* ---- frente: McPherson ---- */
     const bot = [XFA + 0.012, 0.40, s * 0.605], top = [XFA + 0.03, 0.83, s * 0.535];
-    rod('amort_diant', bot, lerp3(bot, top, 0.53), 0.025, MAT.steelDark);
-    rod('amort_diant', lerp3(bot, top, 0.5), top, 0.011, MAT.chrome);
-    rod('amort_diant', lerp3(bot, top, 0.44), lerp3(bot, top, 0.455), 0.082, MAT.steelDark);
+    /* amortecedor, coxim, manga, bandeja e bieleta vêm do CAD desenhados no lado esquerdo; no direito vão espelhados */
+    const mir = s > 0 ? null : [1, 1, -1];
+    kit('amort_diant', 'strut_gol', { s: mir });
     spring('molas_diant', lerp3(bot, top, 0.46), lerp3(bot, top, 0.92), 0.07, 0.007, 5.5, MAT.spring);
-    rod('coxins_amort', lerp3(bot, top, 0.93), lerp3(bot, top, 0.985), 0.058, MAT.rubber);
-    add('coxins_amort', gTorus(0.045, 0.006, 'y', 6, 24), MAT.steel, lerp3(bot, top, 0.95));
-    box('mangas', [XFA, 0.29, s * 0.63], [0.06, 0.20, 0.05], MAT.iron, 0.01, null, WF.yaw);
-    add('mangas', gCyl(0.04, 0.04, 0.05, 'z', 24), MAT.steel, [XFA, WY, s * 0.69], null, WF.yaw);
-    rod('mangas', [XFA - 0.02, 0.35, s * 0.62], [XFA - 0.13, 0.35, s * 0.595], 0.012, MAT.iron, WF.yaw);
-    rod('mangas', [XFA, 0.37, s * 0.63], bot, 0.02, MAT.iron, WF.yaw);
-    const bj = [XFA, 0.17, s * 0.625];
-    rod('bandejas', bj, [XFA + 0.10, 0.20, s * 0.35], 0.016, MAT.steelDark);
-    rod('bandejas', bj, [XFA - 0.23, 0.20, s * 0.38], 0.016, MAT.steelDark);
-    rod('bandejas', [XFA + 0.08, 0.20, s * 0.41], [XFA - 0.19, 0.20, s * 0.41], 0.012, MAT.steelDark);
-    sph('bandejas', bj, 0.02, MAT.steel);
-    add('bandejas', gCyl(0.023, 0.023, 0.05, 'x', 16), MAT.rubber, [XFA + 0.10, 0.20, s * 0.35]);
-    add('bandejas', gCyl(0.031, 0.031, 0.045, 'y', 16), MAT.rubber, [XFA - 0.23, 0.20, s * 0.38]);
-    rod('barra_estab', [XFA - 0.07, 0.28, s * 0.53], [XFA + 0.012, 0.47, s * 0.60], 0.007, MAT.steel);
+    kit('coxins_amort', 'mount_gol', { s: mir });
+    kit('mangas', 'knuckle_gol', { s: mir, parent: WF.yaw });
+    add('mangas', gCyl(0.028, 0.028, 0.06, 'z', 20), MAT.steel, [XFA, WY, s * 0.685], null, WF.yaw);
+    kit('bandejas', 'arm_gol', { s: mir });
+    kit('barra_estab', 'link_gol', { s: mir });
     box('barra_estab', [XFA - 0.27, 0.265, s * 0.28], [0.04, 0.035, 0.04], MAT.rubber, 0.008);
     box('subchassi', [1.33, 0.205, s * 0.40], [0.62, 0.05, 0.065], MAT.steelDark, 0.01);
     /* freio dianteiro: disco ventilado e pinça flutuante */
@@ -619,9 +610,6 @@ function buildSuspensionBrakes() {
     tube('tubos_freio', [rp(0.1344, -0.0192 * s, 0.6235), [XFA - 0.03, 0.47, s * 0.60], [XFA - 0.02, 0.56, s * 0.56]], 0.005, MAT.rubber);
     /* ---- traseira: eixo de torção (dois braços e uma travessa), molas e amortecedores separados ---- */
     const bu = [-0.80, 0.31, s * 0.585], hub = [XRA, WY, s * 0.62];
-    rod('eixo_tras', bu, hub, 0.029, MAT.steelDark);
-    box('eixo_tras', [XRA, 0.28, s * 0.575], [0.15, 0.13, 0.03], MAT.steelDark, 0.01);
-    box('eixo_tras', [XRA + 0.05, 0.305, s * 0.525], [0.14, 0.018, 0.12], MAT.steelDark, 0.006);
     add('buchas_eixo', gCyl(0.038, 0.038, 0.06, 'z', 20), MAT.rubber, bu);
     box('buchas_eixo', [-0.80, 0.34, s * 0.585], [0.08, 0.06, 0.08], MAT.steelDark, 0.006);
     box('cubo_tras', [XRA, 0.32, s * 0.62], [0.07, 0.21, 0.04], MAT.iron, 0.01);
@@ -629,8 +617,7 @@ function buildSuspensionBrakes() {
     spring('molas_tras', [XRA + 0.05, 0.315, s * 0.525], [XRA + 0.05, 0.58, s * 0.525], 0.058, 0.0066, 5, MAT.spring);
     add('molas_tras', gCyl(0.062, 0.062, 0.012, 'y', 24), MAT.rubber, [XRA + 0.05, 0.585, s * 0.525]);
     const sb = [XRA - 0.06, 0.225, s * 0.575], st = [XRA - 0.10, 0.62, s * 0.54];
-    rod('amort_tras', sb, lerp3(sb, st, 0.55), 0.023, MAT.steelDark);
-    rod('amort_tras', lerp3(sb, st, 0.5), st, 0.0095, MAT.chrome);
+    kit('amort_tras', 'shock_gol', { s: mir });
     add('tambores', gCyl(0.092, 0.092, 0.05, 'z', 40), MAT.iron, [XRA, WY, s * 0.665], null, WRr.spin);
     add('tambores', gCyl(0.10, 0.10, 0.006, 'z', 40), MAT.steelDark, [XRA, WY, s * 0.638], null, WRr.spin);
     for (const a of [0, Math.PI]) { const m = add('sapatas', new THREE.TorusGeometry(0.078, 0.009, 6, 20, Math.PI * 0.8), MAT.pad, [XRA, WY, s * 0.665]); m.rotation.z = a + Math.PI * 0.1; }
@@ -638,8 +625,7 @@ function buildSuspensionBrakes() {
     tube('freio_mao', [[-0.05, 0.22, 0.0], [-0.40, 0.205, s * 0.28], [-0.68, 0.205, s * 0.40], [-1.00, 0.25, s * 0.56], [XRA, WY - 0.05, s * 0.64]], 0.004, MAT.cable);
   });
   /* travessa do eixo traseiro: perfil aberto que torce, logo à frente das rodas */
-  add('eixo_tras', gCyl(0.034, 0.034, 1.12, 'z', 20), MAT.steelDark, [-1.02, 0.29, 0]);
-  box('eixo_tras', [-1.02, 0.32, 0], [0.06, 0.012, 1.08], MAT.steelDark);
+  kit('eixo_tras', 'beam_gol');
   /* barra estabilizadora e subchassi dianteiro */
   tube('barra_estab', [[XFA - 0.07, 0.28, -0.53], [XFA - 0.24, 0.27, -0.47], [XFA - 0.27, 0.265, -0.28], [XFA - 0.27, 0.265, 0.28], [XFA - 0.24, 0.27, 0.47], [XFA - 0.07, 0.28, 0.53]], 0.011, MAT.steel);
   box('subchassi', [1.62, 0.205, 0], [0.05, 0.05, 0.86], MAT.steelDark, 0.01);
@@ -666,12 +652,11 @@ function buildSuspensionBrakes() {
 
 function buildSteering() {
   /* caixa de direção hidráulica: cremalheira com cilindro, válvula no pinhão (lado do motorista) e mangueiras até a bomba */
-  add('caixa_dir', gCyl(0.026, 0.026, 0.66, 'z', 20), MAT.alu, [1.06, 0.35, 0]);
-  add('caixa_dir', gCyl(0.034, 0.034, 0.22, 'z', 20), MAT.aluDark, [1.06, 0.35, -0.12]);
-  add('caixa_dir', gCyl(0.03, 0.03, 0.09, 'y', 20), MAT.alu, [1.06, 0.39, 0.25]);
-  box('caixa_dir', [1.06, 0.365, 0.19], [0.045, 0.035, 0.06], MAT.aluDark, 0.008);
+  kit('caixa_dir', 'rack_gol');
+  /* tubos de aço da válvula até as duas pontas do cilindro de assistência */
+  tube('caixa_dir', [[1.045, 0.378, 0.18], [1.035, 0.383, 0.08], [1.04, 0.378, -0.005]], 0.0035, MAT.steel);
+  tube('caixa_dir', [[1.075, 0.378, 0.18], [1.085, 0.383, 0.0], [1.08, 0.378, -0.225]], 0.0035, MAT.steel);
   S.forEach(s => {
-    for (let k = 0; k < 6; k++) add('caixa_dir', gTorus(0.028, 0.007, 'z', 6, 20), MAT.rubber, [1.06, 0.35, s * (0.34 + k * 0.013)]);
     const inner = V(1.06, 0.35, s * 0.41), outer = V(XFA - 0.13, 0.35, s * 0.595);
     const bar = add('barras_axiais', new THREE.CylinderGeometry(0.009, 0.009, 1, 12), MAT.steel); bar.userData.noMerge = true; setBar(bar, inner, outer);
     const ball = sph('barras_axiais', [outer.x, outer.y, outer.z], 0.017, MAT.steelDark); ball.userData.noMerge = true;
@@ -831,7 +816,7 @@ function fxPositions() {
     const yw = 'y' + si;
     for (const k of [-1, 1]) { A('fx_pinca', rp(0.0902, 0.0576 * k, 0.6062), [0, 0, -s], 0.011, yw); A('fx_pinca', rp(0.1075, 0.0576 * k, 0.6302), [0, 0, -s], 0.012, yw); }
     for (const dx of [-0.04, 0.04]) A('fx_amort_d', [XFA + 0.03 + dx, 0.872, s * 0.535], up, 0.011);
-    A('fx_amort_d', [XFA + 0.04, 0.39, s * 0.61], px, 0.012); A('fx_amort_d', [XFA + 0.04, 0.43, s * 0.61], px, 0.012);
+    A('fx_amort_d', [XFA + 0.0383, 0.3889, s * 0.6392], px, 0.012); A('fx_amort_d', [XFA + 0.04, 0.4289, s * 0.6327], px, 0.012);
     A('fx_bandeja', [XFA + 0.13, 0.20, s * 0.35], px, 0.012); A('fx_bandeja', [XFA - 0.23, 0.23, s * 0.38], up, 0.012); A('fx_bandeja', [XFA, 0.148, s * 0.625], dn, 0.012);
     for (const x of [1.62, 1.02]) A('fx_subchassi', [x, 0.178, s * 0.40], dn, 0.015);
     A('fx_eixo_t', [-0.80, 0.34, s * 0.627], [0, 0, s], 0.013);
@@ -840,7 +825,7 @@ function fxPositions() {
     for (const x of [0.03, -0.43]) for (const dz of [-0.17, 0.17]) A('fx_bancos', [x, 0.345, s * 0.36 + dz], up, 0.011);
     A('fx_cintos', [-0.24, 1.17, s * 0.69], [0, 0, -s], 0.011); A('fx_cintos', [-0.56, 0.42, s * 0.605], [0, 0, -s], 0.011); A('fx_cintos', [-0.40, 0.37, s * 0.16], up, 0.011);
     A('fx_caixa_dir', [XFA - 0.13, 0.325, s * 0.595], dn, 0.011, yw);
-    for (const dx of [-0.03, 0.03]) A('fx_caixa_dir', [1.06 + dx, 0.38, s * 0.22], up, 0.011);
+    for (const dx of [-0.03, 0.03]) A('fx_caixa_dir', [1.06 + dx, 0.38, s * 0.14], up, 0.011);
   });
   [[-0.96, 0.367, 0.12], [-0.96, 0.367, 0.16]].forEach(p => A('fx_valv_equal', p, up, 0.008)); A('fx_valv_equal', [-1.02, 0.33, 0.20], up, 0.007);
   A('fx_bateria', [1.49, 0.832, 0.37], up, 0.008); A('fx_bateria', [1.35, 0.832, 0.37], up, 0.008); A('fx_bateria', [1.42, 0.64, 0.52], pz, 0.01);

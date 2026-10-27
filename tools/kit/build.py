@@ -150,6 +150,71 @@ def engine_items():
 
 engine_items()
 
+
+# ---------- suspensão e direção: lado esquerdo nas coordenadas do carro (o app espelha para o direito) ----------
+def suspension_items():
+    E = {}
+    def rp(XFA, WY, r, t):
+        a = math.atan2(0.05, -0.10)
+        return (XFA + math.cos(a) * r - math.sin(a) * t, WY + math.sin(a) * r + math.cos(a) * t)
+
+    def studs3(x, y, z):
+        return [(x + 0.05 * math.cos(k * 2 * math.pi / 3 + 0.5), y, z + 0.05 * math.sin(k * 2 * math.pi / 3 + 0.5)) for k in range(3)]
+
+    C = {
+        'tiida': dict(XFA=1.30, XRA=-1.30, WY=0.305, bot=(1.312, 0.42, 0.635), top=(1.33, 0.87, 0.56), r=0.026, seat=0.085, topr=0.075, bolts=(0.41, 0.45),
+                      studs=studs3(1.33, 0.892, 0.56), lk=((1.23, 0.29, 0.598), (1.27, 0.50, 0.645)), kz=(0.632, 0.68), up=(1.312, 0.47, 0.667),
+                      bj=(1.30, 0.18, 0.655), sa=((1.28, 0.37, 0.652), (1.16, 0.37, 0.625)), ear=(0.112, 0.06, 0.645, 0.668), abs=(1.37, 0.36, 0.67),
+                      F=(1.40, 0.21, 0.37), R=(1.06, 0.21, 0.40)),
+        'civic': dict(XFA=1.31, XRA=-1.31, WY=0.305, bot=(1.322, 0.42, 0.63), top=(1.34, 0.86, 0.56), r=0.026, seat=0.085, topr=0.075, bolts=(0.41, 0.45),
+                      studs=studs3(1.34, 0.882, 0.56), lk=((1.24, 0.29, 0.598), (1.28, 0.50, 0.64)), kz=(0.627, 0.675), up=(1.322, 0.47, 0.662),
+                      bj=(1.31, 0.18, 0.65), sa=((1.29, 0.37, 0.647), (1.17, 0.37, 0.62)), ear=(0.112, 0.06, 0.64, 0.663), abs=None,
+                      F=(1.41, 0.21, 0.37), R=(1.07, 0.21, 0.40)),
+        'gol': dict(XFA=1.2325, XRA=-1.2325, WY=0.292, bot=(1.2445, 0.40, 0.605), top=(1.2625, 0.83, 0.535), r=0.025, seat=0.082, topr=0.072, bolts=(0.39, 0.43),
+                    studs=[(1.2625 + dx, 0.872, 0.535) for dx in (-0.04, 0.04)], lk=((1.1625, 0.28, 0.568), (1.2025, 0.47, 0.615)), kz=(0.60, 0.645), up=(1.2445, 0.45, 0.637),
+                    bj=(1.2325, 0.17, 0.625), sa=((1.2125, 0.35, 0.62), (1.1025, 0.35, 0.595)), ear=(0.1075, 0.0576, 0.612, 0.632), abs=None,
+                    F=(1.3325, 0.20, 0.35), R=(1.0025, 0.20, 0.38)),
+        '206': dict(XFA=1.2215, XRA=-1.2215, WY=0.29, bot=(1.2335, 0.40, 0.635), top=(1.2515, 0.83, 0.565), r=0.026, seat=0.08, topr=0.072, bolts=(0.39, 0.43),
+                    studs=studs3(1.2515, 0.852, 0.565), lk=((1.1615, 0.28, 0.598), (1.1915, 0.47, 0.645)), kz=(0.63, 0.68), up=(1.2335, 0.45, 0.667),
+                    bj=(1.2215, 0.185, 0.645), sa=((1.2015, 0.33, 0.645), (1.0915, 0.33, 0.62)), ear=(0.1064, 0.057, 0.652, 0.67), abs=None,
+                    F=(1.3215, 0.21, 0.37), R=(1.0015, 0.21, 0.38)),
+    }
+    for car, d in C.items():
+        E['strut_' + car] = (K.strut, dict(bot=d['bot'], top=d['top'], r=d['r'], seat_r=d['seat'], top_r=d['topr'], bolts_y=d['bolts'], link=d['lk'][1]))
+        E['mount_' + car] = (K.strut_mount, dict(bot=d['bot'], top=d['top'], studs=d['studs']))
+        er, et, ez0, ez1 = d['ear']
+        ears = [(*rp(d['XFA'], d['WY'], er, k * et), ez0, ez1) for k in (1, -1)]
+        E['knuckle_' + car] = (K.knuckle, dict(wc=(d['XFA'], d['WY']), z0=d['kz'][0], z1=d['kz'][1], upper=d['up'], bj=d['bj'], sa0=d['sa'][0], sa1=d['sa'][1], ears=ears, abs_boss=d['abs']))
+        E['arm_' + car] = (K.lower_arm, dict(bj=d['bj'], F=d['F'], R=d['R']))
+        E['link_' + car] = (K.stab_link, dict(p0=d['lk'][0], p1=d['lk'][1]))
+    # caixas de direção (inteiras, nos dois lados)
+    E['rack_tiida'] = (K.steering_rack, dict(c=(1.13, 0.37), half=0.35, pinion_z=0.26, clamps=(-0.15, 0.15), boot=(0.35, 0.44)))
+    E['rack_civic'] = (K.steering_rack, dict(c=(1.13, 0.37), half=0.35, pinion_z=0.26, clamps=(-0.15, 0.15), boot=(0.35, 0.44), r=0.028, hyd=(-0.23, -0.01, 0.036), valve=True))
+    E['rack_gol'] = (K.steering_rack, dict(c=(1.06, 0.35), half=0.33, pinion_z=0.25, clamps=(-0.14, 0.14), boot=(0.33, 0.41), hyd=(-0.23, -0.01, 0.034), valve=True))
+    E['rack_206'] = (K.steering_rack, dict(c=(1.07, 0.33), half=0.35, pinion_z=0.26, clamps=(-0.15, 0.15), boot=(0.35, 0.44)))
+    # traseira
+    E['beam_tiida'] = (K.torsion_beam, dict(bu=(-0.86, 0.33, 0.62), hub=(-1.30, 0.305, 0.655), beam=(-1.13, 0.30), spring=(-1.25, 0.315, 0.55), shock_b=(-1.36, 0.235, 0.60), half=0.64))
+    E['beam_gol'] = (K.torsion_beam, dict(bu=(-0.80, 0.31, 0.585), hub=(-1.2325, 0.292, 0.62), beam=(-1.02, 0.29), spring=(-1.1825, 0.305, 0.525), shock_b=(-1.2925, 0.225, 0.575), half=0.60))
+    E['tarm_206'] = (K.trailing_arm, dict(pivot=(-0.87, 0.30), z0=0.595, z1=0.645, hub=(-1.2215, 0.29), hub_z=0.66, shock_b=(-1.3215, 0.22), shock_z=0.615))
+    E['shock_tiida'] = (K.shock, dict(bot=(-1.36, 0.235, 0.60), top=(-1.40, 0.64, 0.565), eye_bot='y', plate_top=((-1.40, 0.643, 0.565), (0.05, 0.08))))
+    E['shock_gol'] = (K.shock, dict(bot=(-1.2925, 0.225, 0.575), top=(-1.3325, 0.62, 0.54), r=0.023, eye_bot='y', stud=0.025))
+    E['shock_206'] = (K.shock, dict(bot=(-1.3215, 0.22, 0.60), top=(-1.2515, 0.53, 0.54), r=0.022, body_to=0.58, eye_bot='z', stud=0.008))
+    XRA = -1.31
+    E['shock_civic'] = (K.shock, dict(bot=(XRA - 0.02, 0.23, 0.53), top=(XRA - 0.06, 0.74, 0.52), seats=((0.31, 0.07), (0.89, 0.068)), eye_bot='y',
+                                      plate_top=((XRA - 0.06, 0.743, 0.50), (0.05, 0.08))))
+    E['rknuckle_civic'] = (K.rear_knuckle, dict(wc=(XRA, 0.305), z0=0.63, z1=0.68, bosses=[((XRA, 0.46, 0.63), 'x', 0.014, 0.04), ((XRA, 0.20, 0.63), 'x', 0.016, 0.05),
+                                                                                        ((XRA + 0.04, 0.29, 0.65), 'z', 0.016, 0.03)]))
+    E['uarm_civic'] = (K.link_arm, dict(p0=(XRA, 0.46, 0.63), p1=(XRA - 0.03, 0.50, 0.42), w=0.03, h=0.02, eyes=[((XRA, 0.46, 0.63), 'x', 0.016, 0.035), ((XRA - 0.03, 0.50, 0.42), 'x', 0.02, 0.04)]))
+    E['larm_civic'] = (lambda: K.link_arm((XRA, 0.20, 0.63), (XRA + 0.06, 0.24, 0.30), 0.04, 0.022, [((XRA, 0.20, 0.63), 'x', 0.018, 0.05), ((XRA + 0.06, 0.24, 0.30), 'x', 0.022, 0.05)])
+                            + K.link_arm((XRA, 0.20, 0.63), (XRA - 0.09, 0.24, 0.30), 0.036, 0.02, [((XRA - 0.09, 0.24, 0.30), 'x', 0.02, 0.045)])
+                            + [('steelDark', K.safe_fillet(K.box(XRA - 0.02, 0.215, 0.53, 0.08, 0.006, 0.05), '|Y', 0.01))], {})
+    E['tlink_civic'] = (K.link_arm, dict(p0=(XRA + 0.04, 0.29, 0.65), p1=(XRA + 0.46, 0.28, 0.62), w=0.035, h=0.05, eyes=[((XRA + 0.04, 0.29, 0.65), 'z', 0.018, 0.03), ((XRA + 0.46, 0.28, 0.62), 'z', 0.032, 0.04)]))
+    for k, (fn, kw) in E.items():
+        ITEMS[k] = (fn, kw, MID, 'box')
+
+
+suspension_items()
+
 def mesh_of(shape, tol, ang):
     """Malha com tolerância absoluta (em metros). O tessellate do CadQuery refaz a malha com tolerância relativa ao
     tamanho de cada aresta, o que afina demais as peças pequenas; aqui a malha é feita uma vez e lida face a face."""

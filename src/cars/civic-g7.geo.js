@@ -552,24 +552,15 @@ function buildSuspensionBrakes() {
     const WF = WHEELS.find(w => w.front && w.s === s), WRr = WHEELS.find(w => !w.front && w.s === s);
     /* ---- frente: McPherson ---- */
     const bot = [XFA + 0.012, 0.42, s * 0.63], top = [XFA + 0.03, 0.86, s * 0.56];
-    rod('amort_diant', bot, lerp3(bot, top, 0.53), 0.026, MAT.steelDark);
-    rod('amort_diant', lerp3(bot, top, 0.5), top, 0.011, MAT.chrome);
-    rod('amort_diant', lerp3(bot, top, 0.44), lerp3(bot, top, 0.455), 0.085, MAT.steelDark);
+    /* amortecedor, coxim, manga, bandeja e bieleta vêm do CAD desenhados no lado esquerdo; no direito vão espelhados */
+    const mir = s > 0 ? null : [1, 1, -1];
+    kit('amort_diant', 'strut_civic', { s: mir });
     spring('molas_diant', lerp3(bot, top, 0.46), lerp3(bot, top, 0.92), 0.072, 0.0072, 5.5, MAT.spring);
-    rod('coxins_amort', lerp3(bot, top, 0.93), lerp3(bot, top, 0.985), 0.06, MAT.rubber);
-    add('coxins_amort', gTorus(0.047, 0.006, 'y', 6, 24), MAT.steel, lerp3(bot, top, 0.95));
-    box('mangas', [XFA, 0.31, s * 0.655], [0.06, 0.21, 0.05], MAT.iron, 0.01, null, WF.yaw);
-    add('mangas', gCyl(0.042, 0.042, 0.05, 'z', 24), MAT.steel, [XFA, WY, s * 0.715], null, WF.yaw);
-    rod('mangas', [XFA - 0.02, 0.37, s * 0.645], [XFA - 0.14, 0.37, s * 0.62], 0.012, MAT.iron, WF.yaw);
-    rod('mangas', [XFA, 0.39, s * 0.655], bot, 0.02, MAT.iron, WF.yaw);
-    const bj = [XFA, 0.18, s * 0.65];
-    rod('bandejas', bj, [XFA + 0.10, 0.21, s * 0.37], 0.016, MAT.steelDark);
-    rod('bandejas', bj, [XFA - 0.24, 0.21, s * 0.40], 0.016, MAT.steelDark);
-    rod('bandejas', [XFA + 0.08, 0.21, s * 0.43], [XFA - 0.20, 0.21, s * 0.43], 0.012, MAT.steelDark);
-    sph('bandejas', bj, 0.021, MAT.steel);
-    add('bandejas', gCyl(0.024, 0.024, 0.05, 'x', 16), MAT.rubber, [XFA + 0.10, 0.21, s * 0.37]);
-    add('bandejas', gCyl(0.032, 0.032, 0.045, 'y', 16), MAT.rubber, [XFA - 0.24, 0.21, s * 0.40]);
-    rod('barra_estab', [XFA - 0.07, 0.29, s * 0.56], [XFA + 0.012, 0.50, s * 0.625], 0.007, MAT.steel);
+    kit('coxins_amort', 'mount_civic', { s: mir });
+    kit('mangas', 'knuckle_civic', { s: mir, parent: WF.yaw });
+    add('mangas', gCyl(0.028, 0.028, 0.06, 'z', 20), MAT.steel, [XFA, WY, s * 0.715], null, WF.yaw);
+    kit('bandejas', 'arm_civic', { s: mir });
+    kit('barra_estab', 'link_civic', { s: mir });
     box('barra_estab', [XFA - 0.26, 0.27, s * 0.30], [0.04, 0.035, 0.04], MAT.rubber, 0.008);
     box('subchassi', [1.38, 0.215, s * 0.42], [0.66, 0.05, 0.065], MAT.steelDark, 0.01);
     /* freio dianteiro: disco ventilado e pinça flutuante */
@@ -582,18 +573,13 @@ function buildSuspensionBrakes() {
     tube('tubos_freio', [rp(0.14, -0.02 * s, 0.652), [XFA - 0.03, 0.48, s * 0.62], [XFA - 0.02, 0.58, s * 0.58]], 0.005, MAT.rubber);
     /* ---- traseira: braços sobrepostos (braço superior, braço inferior e braço longitudinal) ---- */
     const kn = [XRA, WY, s * 0.665];
-    box('cubo_tras', [XRA, 0.33, s * 0.655], [0.07, 0.24, 0.05], MAT.iron, 0.01);
+    kit('cubo_tras', 'rknuckle_civic', { s: mir });
     add('cubo_tras', gCyl(0.03, 0.03, 0.07, 'z', 20), MAT.steel, kn);
-    rod('braco_sup_t', [XRA, 0.46, s * 0.63], [XRA - 0.03, 0.50, s * 0.42], 0.012, MAT.steelDark);
-    add('braco_sup_t', gCyl(0.02, 0.02, 0.04, 'x', 14), MAT.rubber, [XRA - 0.03, 0.50, s * 0.42]);
-    rod('braco_inf_t', [XRA, 0.20, s * 0.63], [XRA + 0.06, 0.24, s * 0.30], 0.016, MAT.steelDark);
-    rod('braco_inf_t', [XRA, 0.20, s * 0.63], [XRA - 0.09, 0.24, s * 0.30], 0.014, MAT.steelDark);
-    add('braco_inf_t', gCyl(0.022, 0.022, 0.05, 'x', 14), MAT.rubber, [XRA + 0.06, 0.24, s * 0.30]);
-    rod('braco_long_t', [XRA + 0.04, 0.29, s * 0.65], [XRA + 0.46, 0.28, s * 0.62], 0.016, MAT.steelDark);
-    add('braco_long_t', gCyl(0.03, 0.03, 0.04, 'z', 16), MAT.rubber, [XRA + 0.46, 0.28, s * 0.62]);
+    kit('braco_sup_t', 'uarm_civic', { s: mir });
+    kit('braco_inf_t', 'larm_civic', { s: mir });
+    kit('braco_long_t', 'tlink_civic', { s: mir });
     const sb = [XRA - 0.02, 0.23, s * 0.53], st = [XRA - 0.06, 0.74, s * 0.52];
-    rod('amort_tras', sb, lerp3(sb, st, 0.55), 0.024, MAT.steelDark);
-    rod('amort_tras', lerp3(sb, st, 0.5), st, 0.01, MAT.chrome);
+    kit('amort_tras', 'shock_civic', { s: mir });
     spring('molas_tras', lerp3(sb, st, 0.32), lerp3(sb, st, 0.88), 0.062, 0.0065, 6, MAT.spring);
     add('tambores', gCyl(0.10, 0.10, 0.05, 'z', 40), MAT.iron, [XRA, WY, s * 0.695], null, WRr.spin);
     add('tambores', gCyl(0.11, 0.11, 0.006, 'z', 40), MAT.steelDark, [XRA, WY, s * 0.667], null, WRr.spin);
@@ -626,12 +612,11 @@ function buildSuspensionBrakes() {
 
 function buildSteering() {
   /* caixa de direção hidráulica: cremalheira com cilindro, válvula no pinhão (lado do motorista) e mangueiras até a bomba */
-  add('caixa_dir', gCyl(0.028, 0.028, 0.70, 'z', 20), MAT.alu, [1.13, 0.37, 0]);
-  add('caixa_dir', gCyl(0.036, 0.036, 0.22, 'z', 20), MAT.aluDark, [1.13, 0.37, -0.12]);
-  add('caixa_dir', gCyl(0.03, 0.03, 0.09, 'y', 20), MAT.alu, [1.13, 0.41, 0.26]);
-  box('caixa_dir', [1.13, 0.385, 0.20], [0.045, 0.035, 0.06], MAT.aluDark, 0.008);
+  kit('caixa_dir', 'rack_civic');
+  /* tubos de aço da válvula até as duas pontas do cilindro de assistência */
+  tube('caixa_dir', [[1.115, 0.40, 0.19], [1.105, 0.405, 0.08], [1.11, 0.40, -0.005]], 0.0035, MAT.steel);
+  tube('caixa_dir', [[1.145, 0.40, 0.19], [1.155, 0.405, 0.0], [1.15, 0.40, -0.225]], 0.0035, MAT.steel);
   S.forEach(s => {
-    for (let k = 0; k < 6; k++) add('caixa_dir', gTorus(0.028, 0.007, 'z', 6, 20), MAT.rubber, [1.13, 0.37, s * (0.36 + k * 0.014)]);
     const inner = V(1.13, 0.37, s * 0.44), outer = V(XFA - 0.14, 0.37, s * 0.62);
     const bar = add('barras_axiais', new THREE.CylinderGeometry(0.009, 0.009, 1, 12), MAT.steel); bar.userData.noMerge = true; setBar(bar, inner, outer);
     const ball = sph('barras_axiais', [outer.x, outer.y, outer.z], 0.018, MAT.steelDark); ball.userData.noMerge = true;
@@ -779,17 +764,17 @@ function fxPositions() {
     for (const k of [-1, 1]) { A('fx_pinca', rp(0.094, 0.06 * k, 0.634), [0, 0, -s], 0.011, yw); A('fx_pinca', rp(0.112, 0.06 * k, 0.659), [0, 0, -s], 0.012, yw); }
     for (const k of [-1, 1]) A('fx_disco', [XFA + 0.03 * k, WY, s * 0.722], [0, 0, s], 0.007, wh);
     for (let k = 0; k < 3; k++) { const a = k * TAU / 3 + 0.5; A('fx_amort_d', [XFA + 0.03 + 0.05 * Math.cos(a), 0.882, s * 0.56 + 0.05 * Math.sin(a)], up, 0.011); }
-    A('fx_amort_d', [XFA + 0.04, 0.41, s * 0.635], px, 0.012); A('fx_amort_d', [XFA + 0.04, 0.45, s * 0.635], px, 0.012);
+    A('fx_amort_d', [XFA + 0.0384, 0.4089, s * 0.6642], px, 0.012); A('fx_amort_d', [XFA + 0.04, 0.4489, s * 0.6578], px, 0.012);
     A('fx_bandeja', [XFA + 0.13, 0.21, s * 0.37], px, 0.013); A('fx_bandeja', [XFA - 0.24, 0.24, s * 0.40], up, 0.013); A('fx_bandeja', [XFA, 0.157, s * 0.65], dn, 0.013);
     for (const x of [1.70, 1.06]) A('fx_subchassi', [x, 0.19, s * 0.42], dn, 0.016);
     A('fx_susp_t', [XRA - 0.03, 0.525, s * 0.42], up, 0.012); A('fx_susp_t', [XRA + 0.06, 0.215, s * 0.30], dn, 0.012); A('fx_susp_t', [XRA - 0.09, 0.215, s * 0.30], dn, 0.012); A('fx_susp_t', [XRA + 0.46, 0.25, s * 0.62], dn, 0.012);
     for (const dx of [-0.05, 0.05]) A('fx_travessa_t', [XRA + dx, 0.30, s * 0.34], up, 0.014);
-    A('fx_amort_t', [XRA - 0.02, 0.205, s * 0.53], dn, 0.013); A('fx_amort_t', [XRA - 0.06, 0.765, s * 0.52], up, 0.013); A('fx_amort_t', [XRA - 0.06, 0.765, s * 0.48], up, 0.013);
+    A('fx_amort_t', [XRA - 0.02, 0.205, s * 0.53], dn, 0.013); A('fx_amort_t', [XRA - 0.06, 0.75, s * 0.52], up, 0.013); A('fx_amort_t', [XRA - 0.06, 0.75, s * 0.48], up, 0.013);
     for (const x of [-0.62, -1.08]) A('fx_tanque', [x, 0.33, s > 0 ? 0.34 : -0.34], up, 0.012);
     for (const x of [0.12, -0.36]) for (const dz of [-0.18, 0.18]) A('fx_bancos', [x, 0.345, s * 0.37 + dz], up, 0.011);
     A('fx_cintos', [-0.18, 1.16, s * 0.73], [0, 0, -s], 0.011); A('fx_cintos', [-0.50, 0.42, s * 0.635], [0, 0, -s], 0.011); A('fx_cintos', [-0.34, 0.36, s * 0.16], up, 0.011);
     A('fx_caixa_dir', [XFA - 0.14, 0.345, s * 0.62], dn, 0.011, yw);
-    for (const dx of [-0.03, 0.03]) A('fx_caixa_dir', [1.13 + dx, 0.40, s * 0.20], up, 0.011);
+    for (const dx of [-0.03, 0.03]) A('fx_caixa_dir', [1.13 + dx, 0.40, s * 0.15], up, 0.011);
   });
   A('fx_bateria', [1.81, 0.715, 0.41], up, 0.008); A('fx_bateria', [1.81, 0.715, 0.59], up, 0.008); A('fx_bateria', [1.93, 0.52, 0.50], up, 0.01);
   [[1.18, 0.56, -0.07], [1.18, 0.56, -0.11], [0.98, 0.187, 0.02], [0.98, 0.187, -0.03], [-1.62, 0.29, 0.38], [-1.62, 0.29, 0.43]].forEach((p, i) => A('fx_escape', p, i < 2 ? up : i < 4 ? px : up, 0.01));
