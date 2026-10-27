@@ -10,20 +10,18 @@ const TRK = 0.705, WR = 0.298, WY = 0.292;         // bitola/2, raio do pneu 195
 MAT.chromeTrim = std({ color: 0xd9dde0, roughness: 0.12, metalness: 1 });
 MAT.acPipe = std({ color: 0xa9adb2, roughness: 0.3, metalness: 0.85 });
 MAT.psFluid = phy({ color: 0xc8b98a, roughness: 0.35, transparent: true, opacity: 0.85 });
-MAT.lensWhite = phy({ color: 0xeef0f2, roughness: 0.08, transparent: true, opacity: 0.9, clearcoat: 1 });
-MAT.lampHousing = std({ color: 0x3a3f45, roughness: 0.25, metalness: 0.9 });
 MAT.covers = std({ color: 0x2b2e32, roughness: 0.55, metalness: 0.3 });
 MAT.alloyWheel = std({ color: 0xc3c8cd, roughness: 0.26, metalness: 0.88 });
 
 /* ---------- carroceria: hatch de 4 portas, coluna traseira larga sem vidro e tampa traseira quase de pé ---------- */
 const BK = {
-  zMax: mono([[-1.90, .50], [-1.895, .60], [-1.885, .67], [-1.865, .73], [-1.83, .775], [-1.78, .80], [-1.68, .818], [-1.5, .826], [-1.23, .828], [0, .828], [1.3, .826], [1.5, .817], [1.68, .795], [1.80, .76], [1.90, .70], [1.97, .60], [2.0, .50]]),
-  yFloor: mono([[-1.90, .35], [-1.87, .30], [-1.76, .27], [-1.55, .24], [-1.15, .20], [0, .18], [0.85, .185], [1.4, .195], [1.72, .21], [1.90, .24], [2.0, .29]]),
-  yFC: mono([[-1.90, .35], [-1.80, .36], [-1.58, .36], [-1.38, .33], [-1.05, .32], [-0.86, .29], [-0.42, .29], [-0.30, .235], [0.66, .235], [0.88, .215], [1.4, .195], [1.72, .21], [1.90, .24], [2.0, .29]]),
-  yBelt: mono([[-1.90, .58], [-1.885, .61], [-1.87, .635], [-1.855, .70], [-1.835, .78], [-1.81, .85], [-1.785, .91], [-1.76, .955], [-1.70, .99], [-1.62, 1.005], [-1.45, 1.015], [-1.2, 1.015], [-0.9, 1.005], [-0.4, .99], [0, .98], [0.45, .955], [0.80, .915], [1.0, .89], [1.35, .84], [1.6, .80], [1.78, .76], [1.88, .72], [1.96, .66], [2.0, .59]]),
-  yEdge: mono([[-1.90, .60], [-1.885, .63], [-1.87, .655], [-1.855, .735], [-1.835, .82], [-1.81, .895], [-1.785, .945], [-1.76, .985], [-1.72, 1.055], [-1.66, 1.16], [-1.60, 1.245], [-1.53, 1.33], [-1.49, 1.37], [-1.47, 1.385], [-1.35, 1.405], [-1.0, 1.418], [-0.5, 1.422], [-0.1, 1.42], [0.10, 1.395], [0.30, 1.285], [0.55, 1.11], [0.80, .95], [0.92, .93], [1.1, .915], [1.4, .87], [1.65, .815], [1.80, .78], [1.90, .735], [1.97, .67], [2.0, .61]]),
-  yTop: mono([[-1.90, .605], [-1.885, .635], [-1.87, .66], [-1.855, .745], [-1.835, .835], [-1.81, .91], [-1.785, .96], [-1.76, 1.0], [-1.72, 1.075], [-1.66, 1.185], [-1.60, 1.27], [-1.53, 1.355], [-1.49, 1.40], [-1.47, 1.415], [-1.35, 1.44], [-1.0, 1.458], [-0.5, 1.464], [-0.1, 1.462], [0.10, 1.43], [0.30, 1.315], [0.55, 1.135], [0.80, .975], [0.92, .955], [1.1, .94], [1.4, .895], [1.65, .835], [1.80, .795], [1.90, .745], [1.97, .675], [2.0, .615]]),
-  zEdge: mono([[-1.90, .44], [-1.885, .55], [-1.865, .63], [-1.84, .675], [-1.80, .695], [-1.65, .68], [-1.30, .655], [-1.0, .645], [-0.1, .645], [0.10, .65], [0.35, .70], [0.80, .75], [1.05, .745], [1.4, .725], [1.65, .685], [1.82, .625], [1.92, .565], [1.97, .50], [2.0, .44]])
+  zMax: mono([[-1.90, .50], [-1.895, .60], [-1.885, .67], [-1.865, .73], [-1.83, .775], [-1.78, .80], [-1.68, .818], [-1.5, .826], [-1.23, .828], [0, .828], [1.3, .826], [1.5, .817], [1.68, .795], [1.80, .762], [1.88, .72], [1.93, .67], [1.96, .62], [1.98, .57], [1.992, .52], [1.998, .48], [2.0, .45]]),
+  yFloor: mono([[-1.90, .35], [-1.87, .30], [-1.76, .27], [-1.55, .24], [-1.15, .20], [0, .18], [0.85, .185], [1.4, .195], [1.72, .21], [1.90, .24], [1.96, .26], [2.0, .30]]),
+  yFC: mono([[-1.90, .35], [-1.80, .36], [-1.58, .36], [-1.38, .33], [-1.05, .32], [-0.86, .29], [-0.42, .29], [-0.30, .235], [0.66, .235], [0.88, .215], [1.4, .195], [1.72, .21], [1.90, .24], [1.96, .26], [2.0, .30]]),
+  yBelt: mono([[-1.90, .58], [-1.885, .61], [-1.87, .635], [-1.855, .70], [-1.835, .78], [-1.81, .85], [-1.785, .91], [-1.76, .955], [-1.70, .99], [-1.62, 1.005], [-1.45, 1.015], [-1.2, 1.015], [-0.9, 1.005], [-0.4, .99], [0, .98], [0.45, .955], [0.80, .915], [1.0, .89], [1.35, .84], [1.6, .80], [1.78, .76], [1.84, .74], [1.87, .725], [1.90, .70], [1.93, .662], [1.955, .628], [1.975, .607], [1.99, .595], [2.0, .585]]),
+  yEdge: mono([[-1.90, .60], [-1.885, .63], [-1.87, .655], [-1.855, .735], [-1.835, .82], [-1.81, .895], [-1.785, .945], [-1.76, .985], [-1.72, 1.055], [-1.66, 1.16], [-1.60, 1.245], [-1.53, 1.33], [-1.49, 1.37], [-1.47, 1.385], [-1.35, 1.405], [-1.0, 1.418], [-0.5, 1.422], [-0.1, 1.42], [0.10, 1.395], [0.30, 1.285], [0.55, 1.11], [0.80, .95], [0.92, .93], [1.1, .915], [1.4, .87], [1.65, .815], [1.80, .78], [1.84, .768], [1.87, .75], [1.90, .72], [1.93, .677], [1.955, .64], [1.975, .617], [1.99, .604], [2.0, .595]]),
+  yTop: mono([[-1.90, .605], [-1.885, .635], [-1.87, .66], [-1.855, .745], [-1.835, .835], [-1.81, .91], [-1.785, .96], [-1.76, 1.0], [-1.72, 1.075], [-1.66, 1.185], [-1.60, 1.27], [-1.53, 1.355], [-1.49, 1.40], [-1.47, 1.415], [-1.35, 1.44], [-1.0, 1.458], [-0.5, 1.464], [-0.1, 1.462], [0.10, 1.43], [0.30, 1.315], [0.55, 1.135], [0.80, .975], [0.92, .955], [1.1, .94], [1.4, .895], [1.65, .835], [1.80, .795], [1.84, .783], [1.87, .765], [1.90, .735], [1.93, .69], [1.955, .65], [1.975, .625], [1.99, .61], [2.0, .60]]),
+  zEdge: mono([[-1.90, .44], [-1.885, .55], [-1.865, .63], [-1.84, .675], [-1.80, .695], [-1.65, .68], [-1.30, .655], [-1.0, .645], [-0.1, .645], [0.10, .65], [0.35, .70], [0.80, .75], [1.05, .745], [1.4, .725], [1.65, .685], [1.82, .625], [1.90, .575], [1.95, .52], [1.98, .475], [2.0, .43]])
 };
 const ROWS = [0.26, 0.32, 0.40, 0.48, 0.57, 0.615, 0.69, 0.77, 0.85, 0.91];
 const UPF = [0.35, 0.7, 1.0];
@@ -31,10 +29,14 @@ const TOPU = [0.975, 0.9, 0.72, 0.48, 0.24, 0];
 /* divisões (x) */
 const XH = 1.86, XC = 0.92, XA = 0.82, XWB = 0.80, XDF = 0.73, XWT = 0.10, XB = -0.19, XBP = -0.14, XD2 = -0.85, XRG = -0.79, XDV = -0.60,
   XT = -1.47, XT2 = -1.49, XG = -1.76, XLF = -1.745, XL = -1.87, XHL = 1.75, XN = 1.965;
-const B = makeBody({ XF: 2.0, XR: -1.90, RA: 0.37, ZN: 0.54, XFA, XRA, WY, BK, ROWS, UPF, TOPU,
+const B = makeBody({ XF: 2.0, XR: -1.90, RA: 0.37, ZN: 0.54, XFA, XRA, WY, BK, ROWS, UPF, TOPU, bulge: [0.035, 0.018],
   cuts: [XH, XC, XA, XWB, XDF, XWT, XB, XBP, XD2, XRG, XDV, XT, XT2, XG, XLF, XL, XHL, XN, XDV - 0.012, XDV + 0.012, -0.03, 0.10, -0.70, -0.57, 0.775, 0.95, 1.90, 1.93, 1.95, 1.98,
     -1.895, -1.885, -1.865, -1.857, -1.85, -1.84, -1.831, -1.828, -1.826, -1.822, -1.815, -1.80, -1.79, -1.78, -1.77, -1.75, -1.72, -1.68, -1.64, -1.60, -1.56, -1.52, -1.50] });
-const { XF, XR, AF0, AF1, AR0, AR1, J, surf, sRow, onSurf, sAtY, sideZ, topY, rowFn, cst, RS, RF, panel, glass, loop, edgePath, capGeo, flushPanels } = B;
+const { XF, XR, AF0, AF1, AR0, AR1, J, surf, sRow, onSurf, sAtY, sideZ, topY, rowFn, cst, RS, RF, panel, glass, loop, edgePath, capGeo, capPt, capPatch, flushPanels } = B;
+/* as lanternas ocupam os cantos (de tCut até a lateral, dobrando até XLS); a parte de baixo da tampa fica entre elas */
+const XLS = -1.80;
+const tCut = x => { const t = Math.min(1, Math.max(0, (x - (-1.80)) / (XG - (-1.80)))); return sRow(x, J.T3) + (sRow(x, J.UE) - 0.01 - sRow(x, J.T3)) * Math.pow(t, 2.5); };
+const lOut = x => { const t = Math.min(1, Math.max(0, (x - XL) / (XLS - XL))); return sRow(x, J.R0615) + (sRow(x, J.UE) - sRow(x, J.R0615)) * Math.pow(t, 2); };
 
 /* ---------- articulações: capô, quatro portas e tampa traseira ---------- */
 let hoodPivot, tailPivot, HINGE, TAILH;
@@ -79,19 +81,22 @@ function buildBody() {
   panel('grade_torpedo', [RF(XA, XC, r(J.UE), 'LRB')], MAT.plastic);
   const slots = []; for (let k = 0; k < 7; k++) slots.push(RS(0.85, 0.895, cst(0.035 + k * 0.08), cst(0.08 + k * 0.08)));
   panel('grade_torpedo', slots, MAT.grille, { off: 0.0015, fl: 0 });
+  /* faróis largos: canto de dentro junto da grade, contornam o canto e afinam para trás pelo para-lama até XLT */
+  const XLT = 1.66, sUE = x => sRow(x, J.UE);
+  const Lb = x => { const t = Math.min(1, Math.max(0, (x - XLT) / (1.90 - XLT))); return sUE(x) + (sRow(x, J.R058) - sUE(x)) * (1 - Math.pow(1 - t, 1.8)); };
   panel('paralamas', [
-    RS(XA, AF1, r(J.R058), r(J.S0), 'LRB'), RS(XA, AF1, r(J.SB), r(J.R058), 'L'),
-    RS(AF1, XHL, r(J.SB), r(J.R058), 'RB'), RS(XA, XH, r(J.UE), r(J.SB), 'LRT')], MAT.paint, { shadow: true, fl: 0.03 });
+    RS(XA, AF1, r(J.R058), r(J.S0), 'LRB'), RS(XA, AF1, r(J.SB), r(J.R058), 'L'), RS(AF1, XLT, r(J.SB), r(J.R058), 'B'),
+    RS(XLT, 1.90, Lb, r(J.R058), 'TB'), RS(XA, XLT, r(J.UE), r(J.SB), 'LT')], MAT.paint, { shadow: true, fl: 0.03 });
   panel('para_choque_d', [RS(AF1, XN, r(J.R058), r(J.F0), 'LT'), RS(XN, XF, r(J.R058), r(J.F0)), RS(XN, XF, r(J.SB), r(J.R058), 'L'), RF(XN, XF, r(J.SB), 'L')], MAT.paint, SH);
   add('para_choque_d', capGeo(true, J.F0, J.T6), MAT.paint).castShadow = true;
   add('para_choque_d', capGeo(true, J.F0, J.R026, 0.62, 0.002), MAT.trim);
   /* faróis grandes de máscara escura: sobem do canto da grade e correm para trás pelo para-lama */
-  const HT = rowFn(J.T4, 0.012), HL = [RS(XH, XN, HT, r(J.SB)), RS(XHL, XN, r(J.SB), r(J.R058))];
+  const HT = rowFn(J.T4, 0.012), HL = [RS(XLT, XH, r(J.UE), Lb), RS(XH, XN, HT, Lb)], ins = (f, d) => x => f(x) + d;
   panel('farois', HL, MAT.black, { fl: 0 });
-  panel('farois', [RS(XH + 0.006, XN - 0.006, rowFn(J.T4, 0.02), r(J.SB)), RS(XHL + 0.008, XN - 0.006, r(J.SB), rowFn(J.R058, -0.008))], MAT.lampHousing, { off: 0.003, fl: 0 });
-  panel('farois', [RS(XHL + 0.03, 1.87, rowFn(J.R058, -0.034), rowFn(J.R058, -0.012))], MAT.lensAmber, { off: 0.006, fl: 0 });
-  panel('farois', HL, MAT.lensClear, { off: 0.013, fl: 0.009, flMat: MAT.trim });
-  S.forEach(s => [[1.925, (sRow(1.925, J.T4) + sRow(1.925, J.UE)) / 2 + 0.004, 0.046], [1.935, sRow(1.935, J.T4) + 0.06, 0.03], [1.865, sRow(1.865, J.SB) + 0.008, 0.036]].forEach(([x, sv, rr]) => {
+  panel('farois', [RS(XLT + 0.03, XH, rowFn(J.UE, 0.006), ins(Lb, -0.006)), RS(XH + 0.006, XN - 0.006, rowFn(J.T4, 0.02), ins(Lb, -0.006))], MAT.lampHousing, { off: 0.003, fl: 0 });
+  panel('farois', [RS(1.76, 1.90, x => Lb(x) - 0.028, ins(Lb, -0.008))], MAT.lensAmber, { off: 0.006, fl: 0 });
+  panel('farois', HL, MAT.lensClear, { off: 0.01, fl: 0.007, flMat: MAT.trim });
+  S.forEach(s => [[1.915, (sRow(1.915, J.T4) + sRow(1.915, J.UE)) / 2 + 0.01, 0.046], [1.93, sRow(1.93, J.T4) + 0.065, 0.03], [1.895, (sRow(1.895, J.SB) + sRow(1.895, J.R058)) / 2, 0.036]].forEach(([x, sv, rr]) => {
     const q = surf(x, s * sv), c = [q.p[0] + q.n[0] * 0.002, q.p[1] + q.n[1] * 0.002, q.p[2] + q.n[2] * 0.002];
     const d = add('farois', new THREE.SphereGeometry(rr, 24, 10, 0, TAU, 0, Math.PI / 2), MAT.reflector, c);
     d.quaternion.setFromUnitVectors(V(0, -1, 0), V(q.n[0], q.n[1], q.n[2])); d.scale.set(1, 0.4, 1);
@@ -99,16 +104,21 @@ function buildBody() {
     sph('farois', [c[0] + q.n[0] * 0.003, c[1] + q.n[1] * 0.003, c[2] + q.n[2] * 0.003], rr * 0.26, MAT.bulb);
   }));
   /* grade estreita entre os faróis: friso horizontal e um emblema redondo genérico */
-  panel('grade', [RF(XH, XN, HT)], MAT.grille, { off: 0.002, fl: 0 });
-  panel('grade', [RF(1.912, 1.924, rowFn(J.T4, -0.02))], MAT.chromeTrim, { off: 0.006, fl: 0.002, flMat: MAT.chromeTrim });
+  panel('grade', [RF(XH, XN, HT)], MAT.black, { off: -0.003, fl: 0.005 });
+  [1.888, 1.912, 1.936].forEach(x => panel('grade', [RF(x, x + 0.009, rowFn(J.T4, -0.006))], MAT.plastic, { off: 0.0, fl: 0.004, flMat: MAT.plastic }));
+  panel('grade', [RF(XH + 0.004, XH + 0.012, rowFn(J.T4, -0.004))], MAT.chromeTrim, { off: 0.004, fl: 0.004, flMat: MAT.chromeTrim });
   {
     const q = surf(1.915, 0), n = V(q.n[0], q.n[1], q.n[2]), c = [q.p[0] + q.n[0] * 0.012, q.p[1] + q.n[1] * 0.012, 0];
     const e = add('grade', gCyl(0.03, 0.03, 0.008, 'y', 32), MAT.chrome, c); e.quaternion.setFromUnitVectors(V(0, 1, 0), n);
     const t = add('grade', gTorus(0.03, 0.004, 'z', 6, 36), MAT.chromeTrim, c); t.quaternion.setFromUnitVectors(V(0, 0, 1), n);
   }
   /* para-choque: a placa no meio e a grade grande de baixo */
-  add('grade_inf', capGeo(true, J.R032, J.R040, 0.56, 0.004), MAT.grille);
-  box('para_choque_d', [2.024, 0.47, 0], [0.008, 0.13, 0.40], MAT.plate, 0.01);
+  /* grade grande de baixo em trapézio (mais larga embaixo), moldura preta, placa por cima */
+  const trap = (wT, wB, y0, y1) => [z => y0, z => { const a = Math.abs(z); return a <= wT ? y1 : y1 - (y1 - y0) * (a - wT) / (wB - wT); }];
+  const TO = trap(0.40, 0.54, 0.305, 0.475), TI = trap(0.385, 0.515, 0.318, 0.462);
+  add('para_choque_d', capPatch(true, -0.54, 0.54, TO[0], TO[1], 0.0015, 54, 6), MAT.black);
+  add('grade_inf', capPatch(true, -0.515, 0.515, TI[0], TI[1], 0.003, 54, 6), MAT.grille);
+  { const p = capPt(true, 0, 0.43, 0.009); box('para_choque_d', p, [0.008, 0.13, 0.40], MAT.plate, 0.01); }
 
   /* portas dianteiras: forro externo, moldura do vidro, painel interno, vidro, forro de dentro */
   panel('portas', [RS(XB, XA, r(J.SB), r(J.R032), 'LRBt')], MAT.paint, { shadow: true, parent: dp, fl: 0.045 });
@@ -139,15 +149,15 @@ function buildBody() {
   panel('laterais', [
     RS(AR1, XD2, r(J.SB), r(J.S0), 'R'),
     RS(AR0, AR1, r(J.R0615), r(J.S0), 'LB'), RS(AR0, AR1, r(J.SB), r(J.R0615)),
-    RS(XLF, AR0, r(J.SB), r(J.R0615), 'LB'),
-    RS(XLF, XT, r(J.UE), r(J.SB), 'LT'), RS(XT, XD2, r(J.UE), r(J.SB), 'R')], MAT.paint, { shadow: true, fl: 0.04 });
+    RS(XLS, AR0, r(J.SB), r(J.R0615), 'LB'), RS(XL, XLS, lOut, r(J.R0615), 'LTB'),
+    RS(XLS, XT, r(J.UE), r(J.SB), 'LT'), RS(XT, XD2, r(J.UE), r(J.SB), 'R')], MAT.paint, { shadow: true, fl: 0.04 });
   panel('teto', [RF(XT, XD2, r(J.UE), 'L'), RF(XD2, XWT, r(J.UE), 'Br')], MAT.paint, { shadow: true, fl: 0.03 });
   panel('colunas', [RS(XWT, XA, r(J.T1), r(J.UE), 'BRt'), RF(XWB, XA, r(J.T1), 'Rl')], MAT.paint, { shadow: true, fl: 0.035 });
   glass('para_brisa', RF(XWT, XWB, r(J.T1)));
 
   /* traseira: tampa com vidro, aerofólio com a luz de freio e a placa; para-choque, painel traseiro e lanternas nos cantos */
-  panel('tampa_tras', [RF(XL, XG, r(J.UE), 'LBr'), RS(XG, XT2, r(J.T2), r(J.UE), 'Bt'), RF(XT2, XT, r(J.UE), 'RBl')], MAT.paint, { shadow: true, parent: tailPivot, fl: 0.03 });
-  panel('tampa_tras', [RF(XL + 0.02, XG - 0.01, rowFn(J.UE, -0.04))], MAT.underDS, { off: -0.03, parent: tailPivot, fl: 0, res: 0.05 });
+  panel('tampa_tras', [RF(XL, XG, tCut, 'LBr'), RS(XG, XT2, r(J.T2), r(J.UE), 'Bt'), RF(XT2, XT, r(J.UE), 'RBl')], MAT.paint, { shadow: true, parent: tailPivot, fl: 0.03 });
+  panel('tampa_tras', [RF(XL + 0.02, XG - 0.01, x => tCut(x) - 0.03)], MAT.underDS, { off: -0.03, parent: tailPivot, fl: 0, res: 0.05 });
   glass('vidro_tras', RF(XG, XT2, r(J.T2)), tailPivot);
   box('tampa_tras', [XT - 0.03, topY(XT - 0.03, 0) + 0.008, 0], [0.075, 0.014, 0.95], MAT.paint, 0.006, [0, 0, -0.16], tailPivot);
   panel('tampa_tras', [RF(-1.857, -1.831, cst(0.2))], MAT.plate, { off: 0.006, fl: 0.005, flMat: MAT.plate, parent: tailPivot });
@@ -160,10 +170,12 @@ function buildBody() {
   box('painel_tras', [-1.85, 0.49, 0], [0.012, 0.26, 1.06], MAT.underDS);
   box('painel_tras', [-1.848, 0.626, 0], [0.04, 0.006, 1.06], MAT.underDS);
   const hY = y => x => sAtY(x, y);
-  panel('lanternas', [RS(XL, XLF, r(J.UE), r(J.R0615))], MAT.lensRed, { off: 0.008, fl: 0.008, flMat: MAT.lensRed });
-  panel('lanternas', [RS(-1.79, XLF - 0.008, hY(0.93), hY(0.895))], MAT.lensAmber, { off: 0.0095, fl: 0 });
-  panel('lanternas', [RS(-1.82, XLF - 0.008, hY(0.835), hY(0.805))], MAT.lensWhite, { off: 0.0095, fl: 0 });
-  S.forEach(s => sph('lanternas', onSurf(-1.80, s * sAtY(-1.80, 0.70), -0.006), 0.02, MAT.bulb));
+  const LT = [RS(XL, XLS, tCut, lOut), RS(XLS, XG, tCut, r(J.UE))];   // vermelho com faixas âmbar (pisca) e branca (ré)
+  panel('lanternas', LT, MAT.lampHousing, { off: 0.003, fl: 0 });
+  panel('lanternas', LT, MAT.lensRed, { off: 0.009, fl: 0.007, flMat: MAT.trim });
+  panel('lanternas', [RS(-1.802, -1.781, x => tCut(x) + 0.012, x => Math.min(sRow(x, J.UE) + 0.03, lOut(x)) - 0.008)], MAT.lensAmber, { off: 0.0115, fl: 0 });
+  panel('lanternas', [RS(-1.838, -1.817, x => tCut(x) + 0.012, x => Math.min(sRow(x, J.UE) + 0.03, lOut(x)) - 0.008)], MAT.lensWhite, { off: 0.0115, fl: 0 });
+  S.forEach(s => sph('lanternas', onSurf(-1.80, s * (tCut(-1.80) + sRow(-1.80, J.UE)) / 2, -0.004), 0.02, MAT.bulb));
 
   /* assoalho e caixas de roda */
   panel('monobloco', [RS(AR0, 0.90, r(J.F2), r(J.F0)), RS(AR1, AF0, r(J.S0), r(J.F2))], MAT.underDS, { fl: 0, res: 0.06 });

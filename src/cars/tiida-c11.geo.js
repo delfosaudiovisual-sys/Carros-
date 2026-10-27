@@ -10,20 +10,18 @@ const TRK = 0.74, WR = 0.311, WY = 0.305;          // bitola/2, raio do pneu 185
 MAT.chromeTrim = std({ color: 0xd9dde0, roughness: 0.12, metalness: 1 });
 MAT.acPipe = std({ color: 0xa9adb2, roughness: 0.3, metalness: 0.85 });
 MAT.airbag = std({ color: 0xd8d2c4, roughness: 0.9 });
-MAT.lensWhite = phy({ color: 0xeef0f2, roughness: 0.08, transparent: true, opacity: 0.9, clearcoat: 1 });
-MAT.lampHousing = std({ color: 0x3a3f45, roughness: 0.25, metalness: 0.9 });
 MAT.chain = std({ color: 0x6d7278, roughness: 0.45, metalness: 0.85 });
 MAT.covers = std({ color: 0x2b2e32, roughness: 0.55, metalness: 0.3 });
 
 /* ---------- carroceria: hatch de 5 portas, teto alto e tampa traseira quase de pé ---------- */
 const BK = {
-  zMax: mono([[-2.065, .50], [-2.058, .60], [-2.045, .68], [-2.02, .74], [-1.98, .785], [-1.92, .815], [-1.80, .835], [-1.6, .843], [-1.3, .8475], [0, .8475], [1.5, .845], [1.75, .835], [1.95, .81], [2.08, .77], [2.16, .71], [2.21, .61], [2.23, .50]]),
-  yFloor: mono([[-2.065, .36], [-2.03, .31], [-1.90, .28], [-1.65, .25], [-1.2, .205], [0, .185], [0.9, .19], [1.5, .20], [1.9, .215], [2.12, .245], [2.23, .30]]),
-  yFC: mono([[-2.065, .36], [-1.95, .37], [-1.70, .37], [-1.48, .34], [-1.10, .33], [-0.90, .30], [-0.40, .30], [-0.28, .24], [0.70, .24], [0.95, .22], [1.5, .20], [1.9, .215], [2.12, .245], [2.23, .30]]),
-  yBelt: mono([[-2.065, .60], [-2.05, .63], [-2.035, .65], [-2.0, .80], [-1.96, .93], [-1.92, 1.0], [-1.86, 1.04], [-1.78, 1.06], [-1.6, 1.07], [-1.3, 1.07], [-1.0, 1.06], [-0.4, 1.045], [0, 1.03], [0.5, 1.005], [0.9, .985], [1.1, .955], [1.5, .89], [1.8, .845], [2.0, .80], [2.12, .76], [2.20, .70], [2.23, .62]]),
-  yEdge: mono([[-2.065, .61], [-2.05, .645], [-2.035, .665], [-2.02, .76], [-2.0, .87], [-1.98, .965], [-1.96, 1.04], [-1.92, 1.15], [-1.86, 1.28], [-1.80, 1.37], [-1.74, 1.43], [-1.72, 1.445], [-1.6, 1.47], [-1.3, 1.485], [-1.0, 1.49], [-0.4, 1.495], [0.0, 1.49], [0.22, 1.46], [0.45, 1.34], [0.70, 1.17], [0.93, 1.035], [1.2, .99], [1.5, .935], [1.8, .875], [2.0, .83], [2.12, .785], [2.20, .715], [2.23, .645]]),
-  yTop: mono([[-2.065, .615], [-2.05, .65], [-2.035, .67], [-2.02, .77], [-2.0, .88], [-1.98, .975], [-1.96, 1.045], [-1.92, 1.165], [-1.86, 1.30], [-1.80, 1.40], [-1.74, 1.46], [-1.72, 1.475], [-1.6, 1.505], [-1.3, 1.525], [-1.0, 1.53], [-0.4, 1.535], [0.0, 1.53], [0.22, 1.49], [0.45, 1.37], [0.70, 1.20], [0.93, 1.065], [1.2, 1.01], [1.5, .955], [1.8, .895], [2.0, .845], [2.12, .80], [2.20, .72], [2.23, .64]]),
-  zEdge: mono([[-2.065, .44], [-2.05, .56], [-2.03, .64], [-2.0, .69], [-1.96, .71], [-1.8, .70], [-1.4, .675], [-1.0, .665], [0.0, .665], [0.22, .67], [0.5, .72], [0.93, .77], [1.2, .765], [1.5, .745], [1.8, .70], [2.0, .65], [2.12, .59], [2.20, .51], [2.23, .44]])
+  zMax: mono([[-2.065, .47], [-2.058, .57], [-2.045, .65], [-2.02, .715], [-1.98, .77], [-1.92, .805], [-1.80, .832], [-1.6, .843], [-1.3, .8475], [0, .8475], [1.5, .845], [1.75, .835], [1.95, .81], [2.08, .77], [2.16, .71], [2.21, .61], [2.23, .50]]),
+  yFloor: mono([[-2.065, .39], [-2.05, .34], [-2.02, .305], [-1.90, .28], [-1.65, .25], [-1.2, .205], [0, .185], [0.9, .19], [1.5, .20], [1.9, .215], [2.12, .245], [2.20, .27], [2.23, .31]]),
+  yFC: mono([[-2.065, .39], [-2.05, .37], [-1.95, .37], [-1.70, .37], [-1.48, .34], [-1.10, .33], [-0.90, .30], [-0.40, .30], [-0.28, .24], [0.70, .24], [0.95, .22], [1.5, .20], [1.9, .215], [2.12, .245], [2.20, .27], [2.23, .31]]),
+  yBelt: mono([[-2.065, .60], [-2.05, .63], [-2.035, .65], [-2.0, .80], [-1.96, .93], [-1.92, 1.0], [-1.86, 1.05], [-1.78, 1.075], [-1.6, 1.088], [-1.3, 1.088], [-1.0, 1.078], [-0.4, 1.06], [0, 1.045], [0.5, 1.02], [0.9, .995], [1.1, .96], [1.5, .89], [1.8, .845], [2.0, .80], [2.05, .788], [2.08, .772], [2.11, .742], [2.14, .695], [2.165, .655], [2.19, .628], [2.21, .612], [2.23, .60]]),
+  yEdge: mono([[-2.065, .61], [-2.05, .645], [-2.035, .665], [-2.02, .76], [-2.0, .87], [-1.98, .965], [-1.96, 1.04], [-1.92, 1.15], [-1.86, 1.28], [-1.80, 1.37], [-1.74, 1.43], [-1.72, 1.435], [-1.6, 1.458], [-1.3, 1.476], [-1.0, 1.485], [-0.4, 1.495], [0.0, 1.49], [0.22, 1.46], [0.45, 1.34], [0.70, 1.17], [0.93, 1.035], [1.2, .99], [1.5, .935], [1.8, .875], [2.0, .83], [2.05, .818], [2.08, .80], [2.11, .765], [2.14, .712], [2.165, .668], [2.19, .638], [2.21, .62], [2.23, .61]]),
+  yTop: mono([[-2.065, .615], [-2.05, .65], [-2.035, .67], [-2.02, .77], [-2.0, .88], [-1.98, .975], [-1.96, 1.045], [-1.92, 1.165], [-1.86, 1.30], [-1.80, 1.40], [-1.74, 1.46], [-1.72, 1.465], [-1.6, 1.493], [-1.3, 1.515], [-1.0, 1.526], [-0.4, 1.535], [0.0, 1.53], [0.22, 1.49], [0.45, 1.37], [0.70, 1.20], [0.93, 1.065], [1.2, 1.01], [1.5, .955], [1.8, .895], [2.0, .845], [2.05, .832], [2.08, .815], [2.11, .778], [2.14, .725], [2.165, .68], [2.19, .648], [2.21, .628], [2.23, .615]]),
+  zEdge: mono([[-2.065, .44], [-2.05, .56], [-2.03, .64], [-2.0, .69], [-1.96, .71], [-1.8, .70], [-1.4, .675], [-1.0, .665], [0.0, .665], [0.22, .67], [0.5, .72], [0.93, .77], [1.2, .765], [1.5, .745], [1.8, .70], [2.0, .65], [2.08, .615], [2.14, .58], [2.19, .53], [2.215, .48], [2.23, .44]])
 };
 const ROWS = [0.27, 0.33, 0.42, 0.50, 0.60, 0.645, 0.72, 0.80, 0.88, 0.95];
 const UPF = [0.35, 0.7, 1.0];
@@ -32,9 +30,12 @@ const TOPU = [0.975, 0.9, 0.72, 0.48, 0.24, 0];
 const XH = 2.06, XC = 1.06, XA = 0.95, XWB = 0.93, XDF = 0.86, XWT = 0.22, XB = -0.12, XBP = -0.07, XD2 = -0.90, XRG = -0.84, XQ2 = -0.95, XQ = -1.30,
   XT = -1.72, XT2 = -1.74, XG = -1.96, XLF = -1.90, XL = -2.035, XHL = 1.92, XN = 2.195;
 const B = makeBody({ XF: 2.23, XR: -2.065, RA: 0.385, ZN: 0.56, XFA, XRA, WY, BK, ROWS, UPF, TOPU,
-  cuts: [XH, XC, XA, XWB, XDF, XWT, XB, XBP, XD2, XRG, XQ2, XQ, XT, XT2, XG, XLF, XL, XHL, XN, 2.10, 2.205, 2.15, 2.04, -0.17, -0.135, 0.94, 2.0, 1.93, 0.88,
+  cuts: [XH, XC, XA, XWB, XDF, XWT, XB, XBP, XD2, XRG, XQ2, XQ, XT, XT2, XG, XLF, XL, XHL, XN, 2.10, 2.205, 2.15, 2.04, 2.215, 2.225, 1.74, 2.17, -1.36, -1.58, -0.17, -0.135, 0.94, 2.0, 1.93, 0.88,
     -2.055, -2.045, -2.025, -2.02, -2.01, -2.0, -1.99, -1.98, -1.97, -1.95, -1.93, -1.92, -1.88, -1.86, -1.84, -1.82, -1.80, -1.78, -1.76, -1.70, -1.66, -1.62, -1.58] });
 const { XF, XR, AF0, AF1, AR0, AR1, J, surf, sRow, onSurf, sAtY, sideZ, topY, rowFn, cst, RS, RF, panel, glass, loop, edgePath, capGeo, flushPanels } = B;
+/* vidro lateral fixo: a borda de trás inclina junto com a coluna traseira (de XQS no alto até XQW na linha de cintura) */
+const XQS = -1.36, XQW = -1.58;
+const qTop = x => x >= XQS ? sRow(x, J.UE) : sRow(x, J.UE) + (sRow(x, J.SB) - sRow(x, J.UE)) * Math.min(1, (XQS - x) / (XQS - XQW));
 
 /* ---------- articulações: capô, quatro portas e tampa traseira ---------- */
 let hoodPivot, tailPivot, HINGE, TAILH;
@@ -79,35 +80,39 @@ function buildBody() {
   panel('grade_torpedo', [RF(XA, XC, r(J.UE), 'LRB')], MAT.plastic);
   const slots = []; for (let k = 0; k < 7; k++) slots.push(RS(0.985, 1.035, cst(0.035 + k * 0.085), cst(0.085 + k * 0.085)));
   panel('grade_torpedo', slots, MAT.grille, { off: 0.0015, fl: 0 });
+  /* faróis: altos junto da grade, contornam o canto e afinam para trás pelo ombro do para-lama até XLT */
+  const XLT = 1.74, sUE = x => sRow(x, J.UE);
+  const Lb = x => { const t = Math.min(1, Math.max(0, (x - XLT) / (2.10 - XLT))); return sUE(x) + (sRow(x, J.R058) - sUE(x)) * (1 - Math.pow(1 - t, 2.2)); };
   panel('paralamas', [
-    RS(XA, AF1, r(J.R058), r(J.S0), 'LRB'), RS(XA, AF1, r(J.SB), r(J.R058), 'L'),
-    RS(AF1, XHL, r(J.SB), r(J.R058), 'RB'), RS(XA, XH, r(J.UE), r(J.SB), 'LRT')], MAT.paint, { shadow: true, fl: 0.03 });
+    RS(XA, AF1, r(J.R058), r(J.S0), 'LRB'), RS(XA, AF1, r(J.SB), r(J.R058), 'L'), RS(AF1, XLT, r(J.SB), r(J.R058), 'B'),
+    RS(XLT, 2.10, Lb, r(J.R058), 'TB'), RS(XA, XLT, r(J.UE), r(J.SB), 'LT')], MAT.paint, { shadow: true, fl: 0.03 });
   panel('para_choque_d', [RS(AF1, XN, r(J.R058), r(J.F0), 'LT'), RS(XN, XF, r(J.R058), r(J.F0)), RS(XN, XF, r(J.SB), r(J.R058), 'L'), RF(XN, XF, r(J.SB), 'L')], MAT.paint, SH);
   add('para_choque_d', capGeo(true, J.F0, J.T6), MAT.paint).castShadow = true;
-  /* faróis grandes: sobem do canto da grade e correm para trás pelo para-lama */
-  const HT = rowFn(J.T3, 0.012), HL = [RS(XH, XN, HT, r(J.SB)), RS(XHL, XN, r(J.SB), r(J.R058))];
+  const HT = rowFn(J.T3, 0.012), HL = [RS(XLT, XH, r(J.UE), Lb), RS(XH, XN, HT, Lb)];
+  const ins = (f, d) => x => f(x) + d;
   panel('farois', HL, MAT.black, { fl: 0 });
-  panel('farois', [RS(XH + 0.006, XN - 0.006, rowFn(J.T3, 0.02), r(J.SB)), RS(XHL + 0.008, XN - 0.006, r(J.SB), rowFn(J.R058, -0.008))], MAT.lampHousing, { off: 0.003, fl: 0 });
-  panel('farois', [RS(XHL + 0.03, 2.02, rowFn(J.R058, -0.036), rowFn(J.R058, -0.012))], MAT.lensAmber, { off: 0.006, fl: 0 });
-  panel('farois', HL, MAT.lensClear, { off: 0.013, fl: 0.009, flMat: MAT.trim });
-  S.forEach(s => [[2.135, (sRow(2.135, J.T3) + sRow(2.135, J.UE)) / 2 + 0.014, 0.046], [2.06, sRow(2.06, J.SB) + 0.006, 0.042]].forEach(([x, sv, rr]) => {
+  panel('farois', [RS(XLT + 0.03, XH, rowFn(J.UE, 0.006), ins(Lb, -0.006)), RS(XH + 0.006, XN - 0.006, rowFn(J.T3, 0.02), ins(Lb, -0.006))], MAT.lampHousing, { off: 0.003, fl: 0 });
+  panel('farois', [RS(1.87, 2.04, x => Lb(x) - 0.03, ins(Lb, -0.008))], MAT.lensAmber, { off: 0.006, fl: 0 });
+  panel('farois', HL, MAT.lensClear, { off: 0.01, fl: 0.007, flMat: MAT.trim });
+  S.forEach(s => [[2.13, (sRow(2.13, J.T3) + sRow(2.13, J.UE)) / 2 + 0.02, 0.05], [2.115, (sRow(2.115, J.SB) + sRow(2.115, J.R058)) / 2 - 0.005, 0.045]].forEach(([x, sv, rr]) => {
     const q = surf(x, s * sv), c = [q.p[0] + q.n[0] * 0.002, q.p[1] + q.n[1] * 0.002, q.p[2] + q.n[2] * 0.002];
     const d = add('farois', new THREE.SphereGeometry(rr, 24, 10, 0, TAU, 0, Math.PI / 2), MAT.reflector, c);
     d.quaternion.setFromUnitVectors(V(0, -1, 0), V(q.n[0], q.n[1], q.n[2])); d.scale.set(1, 0.4, 1);
     const bz = add('farois', gTorus(rr * 1.03, 0.0022, 'y', 6, 32), MAT.chromeTrim || MAT.chrome, c); bz.quaternion.copy(d.quaternion);   // aro cromado do refletor
     sph('farois', [c[0] + q.n[0] * 0.003, c[1] + q.n[1] * 0.003, c[2] + q.n[2] * 0.003], rr * 0.26, MAT.bulb);
   }));
-  /* grade entre os faróis: moldura cromada, duas lâminas e um emblema redondo genérico */
-  panel('grade', [RF(XH, XN, HT)], MAT.grille, { off: 0.002, fl: 0 });
-  panel('grade', [RF(XH + 0.004, XH + 0.022, rowFn(J.T3, -0.008))], MAT.chromeTrim, { off: 0.007, fl: 0.003, flMat: MAT.chromeTrim });
-  [2.115, 2.155].forEach(x => panel('grade', [RF(x, x + 0.012, rowFn(J.T3, -0.02))], MAT.chromeTrim, { off: 0.006, fl: 0.002, flMat: MAT.chromeTrim }));
+  /* grade entre os faróis: fundo preto, "asa" cromada larga em cima, moldura e lâminas finas, emblema redondo genérico */
+  panel('grade', [RF(XH, XN, HT)], MAT.black, { off: -0.004, fl: 0.006 });
+  panel('grade', [RF(XH + 0.004, XH + 0.034, rowFn(J.T3, -0.006))], MAT.chromeTrim, { off: 0.006, fl: 0.008, flMat: MAT.chromeTrim });
+  panel('grade', [RS(XH + 0.034, XN - 0.004, rowFn(J.T3, -0.004), HT)], MAT.chromeTrim, { off: 0.004, fl: 0.006, flMat: MAT.chromeTrim });
+  [2.122, 2.152].forEach(x => panel('grade', [RF(x, x + 0.007, rowFn(J.T3, -0.012))], MAT.chromeTrim, { off: 0.002, fl: 0.004, flMat: MAT.chromeTrim }));
   {
     const q = surf(2.11, 0), n = V(q.n[0], q.n[1], q.n[2]), c = [q.p[0] + q.n[0] * 0.012, q.p[1] + q.n[1] * 0.012, 0];
     const e = add('grade', gCyl(0.034, 0.034, 0.008, 'y', 32), MAT.chrome, c); e.quaternion.setFromUnitVectors(V(0, 1, 0), n);
     const t = add('grade', gTorus(0.034, 0.004, 'z', 6, 36), MAT.chromeTrim, c); t.quaternion.setFromUnitVectors(V(0, 0, 1), n);
   }
   /* para-choque: placa no meio e a entrada de ar larga embaixo */
-  add('grade_inf', capGeo(true, J.R032, J.R040, 0.42, 0.004), MAT.grille);
+  add('grade_inf', capGeo(true, J.R026, J.R040, 0.50, 0.004), MAT.grille);
   box('para_choque_d', [2.255, 0.52, 0], [0.008, 0.13, 0.40], MAT.plate, 0.01);
 
   /* portas dianteiras: forro externo, moldura do vidro, painel interno, vidro, forro de dentro */
@@ -137,8 +142,8 @@ function buildBody() {
     RS(AR1, XD2, r(J.R032), r(J.S0)), RS(AR1, XD2, r(J.SB), r(J.R032), 'Rt'),
     RS(AR0, AR1, r(J.R0615), r(J.S0), 'LB'), RS(AR0, AR1, r(J.SB), r(J.R0615)),
     RS(XLF, AR0, r(J.SB), r(J.R0615), 'LB'),
-    RS(XLF, XT, r(J.UE), r(J.SB), 'LT'), RS(XT, XQ, r(J.UE), r(J.SB), 'r'), RS(XQ2, XD2, r(J.UE), r(J.SB), 'lR')], MAT.paint, { shadow: true, fl: 0.04 });
-  glass('vidros_laterais', RS(XQ, XQ2, r(J.UE), r(J.SB)));
+    RS(XLF, XT, r(J.UE), r(J.SB), 'LT'), RS(XT, XQW, r(J.UE), r(J.SB), 'r'), RS(XQW, XQS, r(J.UE), qTop, 'b'), RS(XQ2, XD2, r(J.UE), r(J.SB), 'lR')], MAT.paint, { shadow: true, fl: 0.04 });
+  glass('vidros_laterais', RS(XQW, XQ2, qTop, r(J.SB)));
   panel('teto', [RF(XT, XQ, r(J.UE), 'L'), RF(XQ, XD2, r(J.UE), 'b'), RF(XD2, XWT, r(J.UE), 'Br')], MAT.paint, { shadow: true, fl: 0.03 });
   panel('colunas', [RS(XWT, XA, r(J.T1), r(J.UE), 'BRt'), RF(XWB, XA, r(J.T1), 'Rl')], MAT.paint, { shadow: true, fl: 0.035 });
   glass('para_brisa', RF(XWT, XWB, r(J.T1)));
@@ -158,9 +163,12 @@ function buildBody() {
   box('painel_tras', [-2.005, 0.50, 0], [0.012, 0.28, 1.16], MAT.underDS);
   box('painel_tras', [-2.0, 0.645, 0], [0.04, 0.006, 1.16], MAT.underDS);
   const hY = y => x => sAtY(x, y);
-  panel('lanternas', [RS(XL, XLF, r(J.UE), r(J.R0615))], MAT.lensRed, { off: 0.008, fl: 0.008, flMat: MAT.lensRed });
-  panel('lanternas', [RS(-1.975, XLF + 0.015, hY(0.945), hY(0.905))], MAT.lensAmber, { off: 0.0095, fl: 0 });
-  panel('lanternas', [RS(-1.975, XLF + 0.015, hY(0.865), hY(0.83))], MAT.lensWhite, { off: 0.0095, fl: 0 });
+  /* lanterna: fundo cromado sob as lentes; vermelho em cima e embaixo, pisca âmbar e ré branca no meio */
+  panel('lanternas', [RS(XL, XLF, r(J.UE), r(J.R0615))], MAT.lampHousing, { off: 0.003, fl: 0 });
+  panel('lanternas', [RS(XL, XLF, r(J.UE), hY(0.95)), RS(XL, XLF, hY(0.83), r(J.R0615))], MAT.lensRed, { off: 0.009, fl: 0 });
+  panel('lanternas', [RS(XL, XLF, hY(0.95), hY(0.895))], MAT.lensAmber, { off: 0.009, fl: 0 });
+  panel('lanternas', [RS(XL, XLF, hY(0.895), hY(0.83))], MAT.lensWhite, { off: 0.009, fl: 0 });
+  panel('lanternas', [RS(XL, XLF, r(J.UE), r(J.R0615), 'LRTB')], MAT.lensRed, { off: 0.009, fl: 0.007, flMat: MAT.trim, flOnly: true });
   S.forEach(s => sph('lanternas', onSurf(-1.95, s * sAtY(-1.95, 0.76), -0.006), 0.022, MAT.bulb));
 
   /* assoalho e caixas de roda */
@@ -179,9 +187,9 @@ function buildBody() {
     };
     ring(XB, XA); ring(XD2, XB);
     const Q = [], vs = (x, a, b, n) => { for (let k = 1; k < n; k++) { const t = k / n; Q.push([x, s * (a(x) + (b(x) - a(x)) * t)]); } };
-    const lo = x => sRow(x, J.SB) - 0.003, hi = x => sRow(x, J.UE) + 0.003;
-    edgePath(XQ + 0.004, XQ2 - 0.004, x => s * lo(x), 12).forEach(p => Q.push(p)); vs(XQ2 - 0.004, lo, hi, 8);
-    edgePath(XQ2 - 0.004, XQ + 0.004, x => s * hi(x), 12).forEach(p => Q.push(p)); vs(XQ + 0.004, hi, lo, 8);
+    const lo = x => sRow(x, J.SB) - 0.003, hi = x => Math.min(qTop(x) + 0.003, lo(x));
+    edgePath(XQW + 0.004, XQ2 - 0.004, x => s * lo(x), 14).forEach(p => Q.push(p)); vs(XQ2 - 0.004, lo, hi, 8);
+    edgePath(XQ2 - 0.004, XQW + 0.004, x => s * hi(x), 24).forEach(p => Q.push(p));
     loop('borrachas', Q, 0.004, MAT.rubber, 0.001, null, true);
   });
   {
@@ -936,7 +944,7 @@ function fxPositions() {
   Bp('fx_cola_parabrisa', toPts(bead(XWT, XWB, x => sRow(x, J.T1), 0.014), -0.008), 0.0045, null, true);
   Bp('fx_cola_vidro_tras', toPts(bead(XG, XT2, x => sRow(x, J.T2), 0.014), -0.008), 0.0045, 'tail', true);
   S.forEach(s => {
-    const Q = [], lo = x => sRow(x, J.SB) - 0.012, hi = x => sRow(x, J.UE) + 0.012, a = XQ + 0.012, b = XQ2 - 0.012;
+    const Q = [], lo = x => sRow(x, J.SB) - 0.012, hi = x => Math.min(qTop(x) + 0.012, lo(x)), a = XQW + 0.03, b = XQ2 - 0.012;
     edgePath(a, b, x => s * lo(x), 12).forEach(p => Q.push(p));
     for (let k = 1; k < 8; k++) { const t = k / 8; Q.push([b, s * (lo(b) + (hi(b) - lo(b)) * t)]); }
     edgePath(b, a, x => s * hi(x), 12).forEach(p => Q.push(p));

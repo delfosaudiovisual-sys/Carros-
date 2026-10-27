@@ -145,8 +145,10 @@ const MAT = {
   under: std({ color: 0x25272a, roughness: 0.95 }),
   liner: std({ color: 0x101112, roughness: 0.95, side: THREE.DoubleSide }),
   glass: phy({ color: 0x18222a, roughness: 0.03, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false }),
-  lensClear: phy({ color: 0xf2f5f7, roughness: 0.02, transparent: true, opacity: 0.16, depthWrite: false, clearcoat: 1 }),
+  lensClear: phy({ color: 0xf2f5f7, roughness: 0.07, transparent: true, opacity: 0.16, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.08 }),
   reflector: std({ color: 0xd9dde1, roughness: 0.18, metalness: 1 }),
+  lampHousing: std({ color: 0xb4bac0, roughness: 0.36, metalness: 1 }),        // fundo cromado de faróis e lanternas
+  lensWhite: phy({ color: 0xeef0f2, roughness: 0.08, transparent: true, opacity: 0.9, clearcoat: 1 }),
   lensRed: phy({ color: 0xb0121c, roughness: 0.12, transparent: true, opacity: 0.88 }),
   lensAmber: std({ color: 0xe38a18, roughness: 0.25, emissive: 0x2a1200 }),
   bulb: std({ color: 0xfff4d6, roughness: 0.2, emissive: 0x6b5a2a }),
@@ -365,6 +367,7 @@ const STN = (() => {
   const s = new Set(); const q = v => +v.toFixed(5);
   for (let x = XR; x <= XF + 1e-9; x += 0.02) s.add(q(x));
   [XR, XF].concat(spec.cuts || []).forEach(v => s.add(q(v)));
+  for (let k = 1; k <= 10; k++) { const d = 0.07 * (k / 10) * (k / 10); s.add(q(XF - d)); s.add(q(XR + d)); }   // pontas arredondadas: estações mais juntas perto das faces
   for (const e of [AF0, AF1, AR0, AR1]) { s.add(q(e - 1e-4)); s.add(q(e + 1e-4)); }
   for (const xa of [XFA, XRA]) for (let k = -20; k <= 20; k++) s.add(q(xa + k / 20 * RA * 0.999));
   return [...s].filter(x => x >= XR - 1e-9 && x <= XF + 1e-9).sort((a, b) => a - b);
@@ -388,8 +391,9 @@ const GP = [], GN = [];
     }
   }
 })();
+const BUL = spec.bulge || [0.022, 0.014];               // quanto a face da frente/traseira estufa no meio
 function capGeo(front, j0, j1, zLim, off) {
-  const i = front ? NS - 1 : 0, dir = front ? 1 : -1, bul = front ? 0.022 : 0.014, K = 18, pos = [], uv = [], idx = [];
+  const i = front ? NS - 1 : 0, dir = front ? 1 : -1, bul = BUL[front ? 0 : 1], K = 18, pos = [], uv = [], idx = [];
   const rows = []; for (let j = j0; j <= j1; j++) rows.push(j);
   rows.forEach(j => {
     const p = GP[i][j], zj = Math.max(1e-4, p[2]), zl = Math.min(zj, zLim || zj);
@@ -398,6 +402,37 @@ function capGeo(front, j0, j1, zLim, off) {
   for (let r = 0; r < rows.length - 1; r++) for (let k = 0; k < K; k++) {
     const a = r * (K + 1) + k, b = a + 1, c = a + K + 1, d = c + 1;
     if (front) idx.push(a, b, c, b, d, c); else idx.push(a, c, b, b, c, d);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
+/* meia largura da face da ponta (frente ou traseira) na altura y */
+function capHalfW(front, y) {
+  const sec = GP[front ? NS - 1 : 0]; let w = 0;
+  for (let j = 0; j < NV - 1; j++) {
+    const a = sec[j], b = sec[j + 1], lo = Math.min(a[1], b[1]), hi = Math.max(a[1], b[1]);
+    if (y < lo || y > hi) continue;
+    const t = hi - lo < 1e-6 ? 0.5 : (y - a[1]) / (b[1] - a[1]); w = Math.max(w, a[2] + (b[2] - a[2]) * t);
+  }
+  return Math.max(w, 1e-3);
+}
+/* ponto sobre a face da ponta, seguindo o estufamento (off > 0 para fora) */
+function capPt(front, z, y, off) {
+  const zw = capHalfW(front, y), u = Math.min(1, Math.abs(z) / zw), bul = BUL[front ? 0 : 1];
+  return [GP[front ? NS - 1 : 0][0][0] + (front ? 1 : -1) * (bul * (1 - u * u) + (off || 0)), y, z];
+}
+/* recorte de contorno livre na face da ponta: colunas em z, de yLo(z) até yHi(z) (bocas de ar, nichos, molduras) */
+function capPatch(front, z0, z1, yLo, yHi, off, nz, ny) {
+  nz = nz || 32; ny = ny || 6;
+  const pos = [], uv = [], idx = [];
+  for (let a = 0; a <= nz; a++) {
+    const z = z0 + (z1 - z0) * a / nz, y0 = yLo(z), y1 = Math.max(y0, yHi(z));
+    for (let b = 0; b <= ny; b++) { const y = y0 + (y1 - y0) * b / ny; pos.push(...capPt(front, z, y, off)); uv.push(z, y); }
+  }
+  const W = ny + 1;
+  for (let a = 0; a < nz; a++) for (let b = 0; b < ny; b++) {
+    const v = a * W + b;
+    if (front) idx.push(v, v + 1, v + W, v + 1, v + W + 1, v + W); else idx.push(v, v + W, v + 1, v + 1, v + W, v + W + 1);
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
   return g;
@@ -541,7 +576,7 @@ function panel(id, rects, mat, o) {
     const parent = typeof o.parent === 'function' ? o.parent(sg) : o.parent, side = r.full ? 0 : sg;
     if (o.res && !r.res) r.res = o.res;
     const R = rectGeo(r, sg, o.off || 0);
-    bpush(id, mat, parent, side, o.shadow, R);
+    if (!o.flOnly) bpush(id, mat, parent, side, o.shadow, R);       // flOnly: só a aba (moldura em volta de lentes já desenhadas)
     const f = flangeGeo(R, r, o.fl == null ? FL : o.fl);
     if (f) bpush(id, o.flMat || MAT.gap, parent, side, false, f);
   }
@@ -558,7 +593,7 @@ function loop(id, pts, r, mat, off, parent, closed) {       // tubo que segue a 
   return tube(id, pts.map(([x, s]) => onSurf(x, s, off)), r, mat, closed, parent, Math.min(240, pts.length * 3), 6);
 }
 function edgePath(x0, x1, sFn, n) { const P = []; for (let k = 0; k <= n; k++) { const x = x0 + (x1 - x0) * k / n; P.push([x, sFn(x)]); } return P; }
-return { XF, XR, RA, AF0, AF1, AR0, AR1, BK, J, NV, STN, NS, GP, GN, SA, archY, stP, zSideAt, sideZ, topY, section, capGeo, stAt, secPt, surf, sRow, onSurf, sAtY,
+return { XF, XR, RA, AF0, AF1, AR0, AR1, BK, J, NV, STN, NS, GP, GN, SA, archY, stP, zSideAt, sideZ, topY, section, capGeo, capHalfW, capPt, capPatch, stAt, secPt, surf, sRow, onSurf, sAtY,
   G, FL, rowFn, cst, RS, RF, rectGeo, flangeGeo, bpush, flushPanels, panel, glass, loop, edgePath };
 }
 

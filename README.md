@@ -94,6 +94,9 @@ tools/shot.mjs          abre a página num Chromium sem tela e tira capturas (TO
 2. Em `data()`, descreva sistemas, peças, fixadores com torques, sintomas, caminhos e revisões.
 3. Em `<novo-id>.geo.js`, ajuste os perfis da carroceria (`BK`), as divisões dos painéis e a mecânica.
    A carroceria é gerada por seções ao longo do carro, então um hatch, um sedã ou uma perua mudam só os perfis.
+   Para os faróis e a grade ficarem de frente, faça o perfil de cima (`yTop`, `yEdge`, `yBelt`) cair rápido
+   na faixa deles; o contorno de faróis, lanternas e vidros é livre (funções de `x` nos limites de `RS`/`RF`),
+   e `capPatch` desenha recortes de qualquer formato na face do para-choque (bocas de ar, molduras).
 4. Em `<novo-id>.proc1.js`/`proc2.js`, coloque o código de fábrica de cada peça (só quando confirmado
    em catálogo) e os passos de desmontar e montar.
 5. Rode `node tools/check-data.mjs` até não sobrar aviso, e `node build.mjs --check`.
