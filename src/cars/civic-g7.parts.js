@@ -223,7 +223,7 @@ P('linhas_comb', 'Tubulação de combustível', 'comb',
   'Engates rápidos e trechos de borracha ressecam. Qualquer cheiro de combustível merece inspeção.',
   'bomba_comb galeria tanque');
 P('bocal', 'Bocal, tampa e portinhola do combustível', 'comb',
-  'Lateral traseira direita.',
+  'Lateral traseira esquerda, do lado do motorista.',
   'Entrada de combustível com tampa vedada e portinhola aberta por alavanca ao lado do banco do motorista.',
   'Tampa mal vedada solta vapor e pode acender a luz da injeção por vazamento no sistema de vapores.',
   'tanque canister laterais');

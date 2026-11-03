@@ -2228,7 +2228,7 @@ function buildSteering() {
   const hub = add('volante_dir', gCyl(0.055, 0.06, 0.05, 'y', 28), MAT.black, [c.x + ax.x * 0.01, c.y + ax.y * 0.01, c.z], null, sw);
   hub.quaternion.setFromUnitVectors(UPY, ax);
   const u = V(0, 0, 1), v = ax.clone().cross(u).normalize();
-  [Math.PI / 2, Math.PI * 7 / 6, -Math.PI / 6].forEach(a => {
+  [-0.18, Math.PI + 0.18, -Math.PI / 2].forEach(a => {   // dois raios quase na horizontal e um embaixo
     const d = u.clone().multiplyScalar(Math.cos(a)).addScaledVector(v, Math.sin(a));
     rod('volante_dir', [c.x, c.y, c.z], [c.x + d.x * 0.18, c.y + d.y * 0.18, c.z + d.z * 0.18], 0.012, MAT.black, sw);
   });

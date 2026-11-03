@@ -245,7 +245,7 @@ function buildBody() {
   box('fech_mala', [XTE + 0.03, onSurf(XTE + 0.03, 0, 0)[1] - 0.02, 0], [0.04, 0.04, 0.08], MAT.steelDark, 0.004, null, tailPivot);
   add('fech_mala', gTorus(0.013, 0.003, 'x', 6, 16), MAT.steel, [XPT + 0.01, 0.905, 0]);
   add('fech_capo', gTorus(0.012, 0.003, 'z', 6, 16), MAT.steel, [2.0, 0.80, 0], null, hoodPivot);
-  { const z = sideZ(-1.85, 0.88) + 0.002; add('bocal', gCyl(0.075, 0.075, 0.006, 'z', 32), MAT.paint, [-1.85, 0.88, -z]); add('bocal', gTorus(0.075, 0.004, 'z', 6, 40), MAT.trim, [-1.85, 0.88, -z - 0.003]); }
+  { const z = sideZ(-1.85, 0.88) + 0.002; add('bocal', gCyl(0.075, 0.075, 0.006, 'z', 32), MAT.paint, [-1.85, 0.88, z]); add('bocal', gTorus(0.075, 0.004, 'z', 6, 40), MAT.trim, [-1.85, 0.88, z + 0.003]); }   // do lado do motorista, como no Civic
   /* limpadores */
   const wip = (x0, z0, z1) => { const pts = []; for (let k = 0; k <= 8; k++) { const z = z0 + (z1 - z0) * k / 8, x = x0 - 0.05 * k / 8; pts.push([x, topY(x, z) + 0.014, z]); } tube('limpador', pts, 0.006, MAT.black); };
   wip(0.90, -0.46, 0.10); wip(0.90, 0.06, 0.62);
@@ -648,7 +648,7 @@ function buildSteering() {
   const hub = add('airbag_mot', gCyl(0.085, 0.09, 0.06, 'y', 28), MAT.black, [c.x + ax.x * 0.012, c.y + ax.y * 0.012, c.z], null, sw);
   hub.quaternion.setFromUnitVectors(UPY, ax);
   const u = V(0, 0, 1), v = ax.clone().cross(u).normalize();
-  [Math.PI / 2, Math.PI * 7 / 6, -Math.PI / 6].forEach(a => {
+  [-0.18, Math.PI + 0.18, -Math.PI / 2].forEach(a => {   // dois raios quase na horizontal e um embaixo
     const d = u.clone().multiplyScalar(Math.cos(a)).addScaledVector(v, Math.sin(a));
     rod('volante_dir', [c.x, c.y, c.z], [c.x + d.x * 0.18, c.y + d.y * 0.18, c.z + d.z * 0.18], 0.012, MAT.black, sw);
   });
@@ -666,7 +666,7 @@ function buildFuelRear() {
   rod('boia', [-0.80, 0.23, -0.18], [-0.66, 0.20, 0.05], 0.003, MAT.steel);
   box('boia', [-0.66, 0.20, 0.05], [0.04, 0.02, 0.03], MAT.black, 0.005);
   tube('linhas_comb', [[-0.80, 0.335, -0.22], [-0.66, 0.32, -0.36], [-0.50, 0.215, -0.40], [0.40, 0.205, -0.38], [0.95, 0.215, -0.36]], 0.005, MAT.steel);
-  tube('bocal', [[-1.85, 0.88, -0.82], [-1.70, 0.62, -0.70], [-1.35, 0.36, -0.48], [-1.10, 0.29, -0.32]], 0.022, MAT.black);
+  tube('bocal', [[-1.85, 0.88, 0.82], [-1.70, 0.62, 0.70], [-1.40, 0.42, 0.50], [-1.12, 0.30, 0.30]], 0.022, MAT.black);
   add('canister', gCyl(0.05, 0.05, 0.22, 'x', 24), MAT.black, [-1.22, 0.25, 0.40]);
   tube('canister', [[-1.10, 0.26, 0.40], [-0.90, 0.31, 0.20], [-0.85, 0.33, 0.10]], 0.004, MAT.cable);
   tube('canister', [[-1.10, 0.25, 0.42], [-0.60, 0.215, 0.44], [0.80, 0.215, 0.44], [1.02, 0.45, 0.42], [1.40, 0.86, 0.10], [1.63, 0.86, -0.22]], 0.004, MAT.cable);
@@ -861,7 +861,7 @@ function fxPositions() {
   for (const dz of [-0.025, 0.025]) { A('fx_fech_mala', [XTE + 0.03, onSurf(XTE + 0.03, 0, 0)[1] - 0.045, dz], dn, 0.008, 'tail'); A('fx_fech_mala', [XPT + 0.012, 0.88, dz * 1.4], px, 0.008); }
   [-0.30, -0.10, 0.10, 0.30].forEach(sv => A('fx_grade', onSurf(2.15, sv, -0.006), neg(nrm(2.15, sv)), 0.008));
   [-0.56, -0.34, -0.12, 0.12, 0.34, 0.56].forEach(sv => A('fx_grade_torpedo', onSurf(XC - 0.03, sv, 0.001), up, 0.009));
-  { const z = sideZ(-1.85, 0.88) - 0.02; [0.83, 0.93].forEach(y => A('fx_bocal', [-1.85, y, -z], [0, 0, -1], 0.008)); }
+  { const z = sideZ(-1.85, 0.88) - 0.02; [0.83, 0.93].forEach(y => A('fx_bocal', [-1.85, y, z], [0, 0, 1], 0.008)); }
 
   /* ---- lataria: pontos de solda ---- */
   const W = (id, x, s, off) => A(id, onSurf(x, s, off == null ? 0.001 : off), nrm(x, s), 0.011);

@@ -932,7 +932,7 @@ function updateHinges() {
 /* ---------- esterço (volante, barras axiais, mangas e rodas) e giro das rodas ---------- */
 function updateSteer(a) {
   WHEELS.forEach(w => { if (w.yaw) w.yaw.rotation.y = a; });
-  if (ANIM.wheel) ANIM.wheel.g.quaternion.setFromAxisAngle(ANIM.wheel.ax, -a * 14);
+  if (ANIM.wheel) ANIM.wheel.g.quaternion.setFromAxisAngle(ANIM.wheel.ax, a * 14);   // a > 0: rodas para a direita, volante no sentido horário (visto do motorista)
   const c = Math.cos(a), sn = Math.sin(a);
   ANIM.tie.forEach(t => {
     const W = WHEELS.find(w => w.front && w.s === t.s), C = W.yaw.userData.absPos;

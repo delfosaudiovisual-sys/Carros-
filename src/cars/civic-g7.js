@@ -330,7 +330,7 @@ const FLOWS = [
   { id: 'comb', n: 'O caminho do combustível', c: '#3F9D4A', d: 'Do bocal até os cilindros por uma linha só (o regulador fica dentro do tanque) e o retorno dos vapores pelo cânister.',
     leg: [['#3F9D4A', 'gasolina'], ['#9C6BD6', 'vapores do tanque']],
     steps: [
-      ['bocal', 'Você abastece pelo bocal, na lateral direita.', { route: 1, at: [-1.85, 0.88, -0.83] }],
+      ['bocal', 'Você abastece pelo bocal, na lateral esquerda (lado do motorista).', { route: 1, at: [-1.85, 0.88, 0.83] }],
       ['tanque', 'A gasolina fica no tanque, sob o banco traseiro.'],
       ['bomba_comb', 'O módulo da bomba filtra e pressuriza: o filtro e o regulador ficam ali dentro.'],
       ['linhas_comb', 'Uma linha só leva a gasolina pelo assoalho até o cofre.', { route: 1, pick: [1, 0] }],
@@ -588,10 +588,10 @@ const GUIDES = [
     ] },
   { id: 'dm_bocal', grp: 'Lataria', n: 'Bocal de abastecimento', part: 'bocal', parts: ['bocal'], side: 0,
     steps: [
-      ['Com o tanque quase vazio, abra a portinhola.', { l: 'Portinhola', at: [-1.85, 0.88, -0.84], cam: [-0.35, 0.3, -1] }],
-      ['Por baixo do carro, solte a abraçadeira da mangueira do tanque.', { l: 'Abraçadeira', at: [-1.12, 0.30, -0.33], cam: [0.15, -0.9, -0.45] }],
-      ['Tire os 2 parafusos da caixa da portinhola.', { fx: [['fx_bocal', [0, 1]]], cam: [-0.35, 0.3, -1], l: 'Parafusos' }],
-      ['Puxe o bocal por baixo.', { out: [['bocal', [0.05, -0.3, 0.15]]], cam: [0.1, -0.75, -0.65], l: 'Bocal' }]
+      ['Com o tanque quase vazio, abra a portinhola.', { l: 'Portinhola', at: [-1.85, 0.88, 0.84], cam: [-0.35, 0.3, 1] }],
+      ['Por baixo do carro, solte a abraçadeira da mangueira do tanque.', { l: 'Abraçadeira', at: [-1.12, 0.30, 0.31], cam: [0.15, -0.9, 0.45] }],
+      ['Tire os 2 parafusos da caixa da portinhola.', { fx: [['fx_bocal', [0, 1]]], cam: [-0.35, 0.3, 1], l: 'Parafusos' }],
+      ['Puxe o bocal por baixo.', { out: [['bocal', [0.05, -0.3, -0.15]]], cam: [0.1, -0.75, 0.65], l: 'Bocal' }]
     ] },
   { id: 'dm_parabrisa', grp: 'Vidros colados', n: 'Para-brisa', part: 'para_brisa', parts: ['para_brisa'], side: 0,
     steps: [
@@ -670,7 +670,7 @@ const EXV = {
   soleiras: [0, -0.15, 0.75, 1], colunas: [0.15, 0.55, 0.55, 1], painel_tras: [-0.8, 0, 0], grade_torpedo: [0.3, 0.75, 0], borrachas: [0, 0.12, 0.5, 1], frisos: [0, 0.05, 1.25, 1], dobr_capo: [0.35, 0.65, 0.35, 1], dobr_mala: [-0.55, 0.75, 0.3, 1], barras_mala: [-0.5, 0.85, 0], fech_mala: [-0.95, 0.35, 0], forros_portas: [0, 0.1, 0.55, 1], forros_portas_tras: [0, 0.1, 0.55, 1],
   capo: [0.25, 0.8, 0], teto: [0, 0.9, 0], para_brisa: [0.35, 0.65, 0], vidro_tras: [-0.45, 0.6, 0], tampa_mala: [-0.6, 0.55, 0], para_choque_d: [0.9, -0.05, 0], para_choque_t: [-0.9, -0.05, 0], grade: [1.0, 0.1, 0], grade_inf: [1.05, -0.05, 0], viga_dianteira: [0.7, -0.05, 0], viga_traseira: [-0.7, -0.05, 0], travessa_frontal: [0.5, 0.05, 0], fech_capo: [0.5, 0.3, 0], monobloco: [0, 0, 0], corta_fogo: [0, 0.05, 0],
   paralamas: [0.15, 0.1, 0.8, 1], portas: [0.1, 0.05, 1.0, 1], portas_tras: [-0.1, 0.05, 1.0, 1], vidros_portas: [0.05, 0.35, 1.05, 1], vidros_portas_tras: [-0.05, 0.35, 1.05, 1], laterais: [-0.1, 0.05, 0.85, 1], retrovisores: [0.1, 0.2, 1.2, 1], caixas_roda: [0, 0, 0.5, 1], dobradicas: [0, 0, 0.85, 1], fech_portas: [-0.1, 0, 0.9, 1], maq_vidro: [0, 0.1, 0.8, 1], maq_vidro_tras: [0, 0.1, 0.8, 1], alto_falantes: [0, 0, 0.75, 1],
-  farois: [0.6, 0.1, 0.35, 1], lanternas: [-0.6, 0.05, 0.35, 1], piscas_lat: [0.2, 0.1, 1.0, 1], luz_freio: [-0.4, 0.6, 0], luz_placa: [-0.9, 0.2, 0], bocal: [-0.2, 0.1, -0.6],
+  farois: [0.6, 0.1, 0.35, 1], lanternas: [-0.6, 0.05, 0.35, 1], piscas_lat: [0.2, 0.1, 1.0, 1], luz_freio: [-0.4, 0.6, 0], luz_placa: [-0.9, 0.2, 0], bocal: [-0.2, 0.1, 0.6],
   painel: [-0.1, 0.55, 0], quadro: [-0.25, 0.7, 0], radio: [-0.3, 0.55, 0], comandos_clima: [-0.35, 0.5, 0], caixa_ar: [0.1, 0.35, 0], vent_interno: [0.1, 0.35, -0.15], filtro_cabine: [0, 0.3, -0.35], evaporador: [0.1, 0.45, -0.25], airbag_pass: [-0.15, 0.85, 0], airbag_mot: [-0.45, 0.45, 0], cabo_espiral: [-0.35, 0.35, 0], srs: [0, 0.35, 0], console: [0, 0.35, 0],
   bancos_diant: [0, 0.35, 0.45, 1], banco_tras: [-0.2, 0.35, 0], cintos: [0, 0.3, 0.6, 1], porta_malas: [-0.3, 0.3, 0], retrovisor_int: [0, 0.8, 0],
   carter: [0, -0.35, 0], bomba_oleo: [0, 0.2, -0.3], filtro_oleo: [0.45, 0.2, 0], vareta: [0.25, 1.0, 0.2], virabrequim: [0, 0.62, 0], polia_vira: [0, 0.62, -0.35], volante_motor: [0, 0.62, 0.35], bloco: [0, 0.95, 0], pistoes: [0, 1.55, 0], bielas: [0, 1.42, 0], junta_cab: [0, 1.75, 0], cabecote: [0, 1.9, 0], valvulas: [0, 2.1, 0], comando: [0, 2.2, 0], polia_comando: [0, 2.2, -0.3], balancins: [0, 2.3, 0], tampa_valv: [0, 2.45, 0], tampa_oleo: [0, 2.52, 0], bobinas: [0, 2.62, 0], velas: [0.12, 2.0, 0], sens_ect: [0, 2.0, 0.25], termostato: [0.1, 0.9, 0.3],
