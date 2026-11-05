@@ -16,6 +16,11 @@ Carros prontos:
   conjunto 8 em 1 (motor, redutor e eletrônica), bateria sob o assoalho com placa fria, porta de recarga CCS2,
   bomba de calor, freio integrado (IPB) e freio de estacionamento elétrico. Os passos de alta tensão explicam o serviço,
   não substituem o treinamento e o manual de reparo da BYD.
+- **Chevrolet S10 Executive 2009, cabine dupla 4x4, 2.8 turbodiesel eletrônico (MWM Sprint), manual de 5 marchas** (`src/cars/s10-2009*.js`):
+  picape sobre chassi de longarinas, com cabine e caçamba separadas, injeção common rail, turbo com intercooler sobre o
+  motor, distribuição por engrenagens, caixa de transferência (2HI, 4HI e 4LO), diferencial dianteiro com acoplamento do
+  eixo, eixo traseiro com Trac-Lock em feixes de molas e frente de braços sobrepostos com barras de torção. Medidas,
+  capacidades, relações, pneus e o plano de manutenção vêm do manual do proprietário S10/Blazer (GM, 11/2008).
 
 A análise de UX e design, com o que foi corrigido e o que fica para a próxima rodada, está em [`docs/analise-ux.md`](docs/analise-ux.md).
 
@@ -100,6 +105,9 @@ tools/shot.mjs          abre a página num Chromium sem tela e tira capturas (TO
 2. Em `data()`, descreva sistemas, peças, fixadores com torques, sintomas, caminhos e revisões.
 3. Em `<novo-id>.geo.js`, ajuste os perfis da carroceria (`BK`), as divisões dos painéis e a mecânica.
    A carroceria é gerada por seções ao longo do carro, então um hatch, um sedã ou uma perua mudam só os perfis.
+   Numa picape (veja `s10-2009.geo.js`), a cabine e a caçamba saem da mesma casca: o perfil de cima desce atrás da
+   cabine até a borda da caçamba, que fica sem o painel de cima (aberta), e o chassi e o interior da caçamba são peças à parte.
+   Em faces quase verticais (grade, tampa), evite fresta nas pontas em x: 2,5 mm em x viram vários centímetros na face.
    Para os faróis e a grade ficarem de frente, faça o perfil de cima (`yTop`, `yEdge`, `yBelt`) cair rápido
    na faixa deles; o contorno de faróis, lanternas e vidros é livre (funções de `x` nos limites de `RS`/`RF`),
    e `capPatch` desenha recortes de qualquer formato na face do para-choque (bocas de ar, molduras).
